@@ -1,0 +1,26 @@
+
+name: Lint - tekniskback-mp
+
+# Run the workflow on every pull-request
+on:
+  pull_request:
+
+jobs:
+  run-linter:
+    name: Run linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout out git repo
+        uses: actions/checkout@v2
+
+      - name: Set up Python version
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+
+      - name: Install dependencies
+        run: pip install flake8
+
+      - name: Run linter
+        run: flake8
