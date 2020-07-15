@@ -5,8 +5,7 @@
     application is live.
 """
 import json
-import subprocess
-from flask import Flask, render_template
+from flask import Flask
 from flask_socketio import SocketIO
 from flask_socketio import send
 from flask_socketio import emit
