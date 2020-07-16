@@ -70,11 +70,32 @@ def handle_joinGame(json_data):
 @socketio.on("newRound")
 def handle_newRound(json_data):
     # TODO: implement me!
-    request.sid
+    player_id=request.sid
     data = json.loads(json_data)
-    models.update_player_in_game(data.player_id, data.game_id, "Ready")
-    
-    while models.get_record_from_player_in_game()
+    models.update_player_in_game(player_id, data.game_id, "Ready")
+    game_state=models.get_record_from_player_in_game().state
+    if game_state=="Ready":
+        emit(get_label(), room=room)
+    else:
+        emit("Player" + player_id + "is done", room=room)
+
+def get_label():
+    """
+        Provides the client with a new word.
+    """
+    token = request.values["token"]
+    player = models.get_record_from_player_in_game(token)
+    game = models.get_record_from_game(player.game_id)
+
+    # Check if game complete
+    if game.session_num > NUM_GAMES:
+        raise excp.BadRequest("Number of games exceeded")
+
+    labels = json.loads(game.labels)
+    label = labels[game.session_num - 1]
+    norwegian_label = models.to_norwegian(label)
+    data = {"label": norwegian_label}
+    return json.dumps(data), 200
     
 
 
