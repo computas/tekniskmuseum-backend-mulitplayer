@@ -201,6 +201,7 @@ def check_player2_in_mulitplayer():
     """
         Function to check if player2 is none in database. If none, a player can be added to the game.
     """
+    # If there is no rows with player_2=None, game will be None
     game=MulitPlayer.query.filter_by(player_2=None).first()
     if game is not None:
         game=game.pop().game_id
@@ -239,8 +240,8 @@ def get_record_from_player_in_game_by_game_id():
         raise excp.BadRequest("Token invalid or expired")
     elif mp.player_1== player_id:
         player_in_game = PlayerInGame.query.get(mp.player_2)
-    elif mp.player_1== player_id:
-        player_in_game = PlayerInGame.query.get(mp.player_2)
+    elif mp.player_2== player_id:
+        player_in_game = PlayerInGame.query.get(mp.player_1)
     return player_in_game
 
 def update_game_for_player(game_id, token, session_num, state):
@@ -264,7 +265,7 @@ def update_mulitplayer(player2_id, player1_id, game_id):
     """
     try:
         mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-        player_1=PlayerInGame.qeury.get(player1_id)
+        player_1=PlayerInGame.query.get(player1_id)
         player_1.game_state="Ready"
         mp.player_2=player_id
         db.session.commit()
