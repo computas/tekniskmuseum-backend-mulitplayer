@@ -319,6 +319,43 @@ def delete_old_games():
         raise Exception("Couldn't clean up old game records: " + str(e))
 
 
+def seed_labels(app, filepath):
+    """
+        Function for updating labels in database.
+    """
+    with app.app_context():
+        if os.path.exists(filepath):
+            with open(filepath) as csvfile:
+                try:
+                    readCSV = csv.reader(csvfile, delimiter=",")
+                    for row in readCSV:
+                        # Insert label into Labels table if not present
+                        if Labels.query.get(row[0]) is None:
+                            insert_into_labels(row[0], row[1])
+                except AttributeError as e:
+                    raise AttributeError(
+                        "Could not insert into Labels table: " + str(e)
+                    )
+        else:
+            raise AttributeError("File path not found")
+
+
+def insert_into_labels(english, norwegian):
+    """
+        Insert values into Scores table.
+    """
+    if isinstance(english, str) and isinstance(norwegian, str):
+        try:
+            label_row = Labels(english=english, norwegian=norwegian)
+            db.session.add(label_row)
+            db.session.commit()
+            return True
+        except Exception as e:
+            raise Exception("Could not insert into Labels table: " + str(e))
+    else:
+        raise excp.BadRequest("English and norwegian must be strings")
+
+
 def get_n_labels(n):
     """
         Reads all rows from database and chooses 3 random labels in a list
