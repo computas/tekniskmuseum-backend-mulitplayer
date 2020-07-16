@@ -235,10 +235,13 @@ def get_record_from_player_in_game_by_game_id():
         Return the player in game record with the corresponding token.
     """
     mp=MulitPlayer.query.filter_by(game_id=game_id).first()
-    player_in_game = PlayerInGame.query.get(token)
+    
     if player_in_game is None:
         raise excp.BadRequest("Token invalid or expired")
-
+    elif mp.player_1== player_id:
+        player_in_game = PlayerInGame.query.get(mp.player_2)
+    elif mp.player_1== player_id:
+        player_in_game = PlayerInGame.query.get(mp.player_2)
     return player_in_game
 
 def update_game_for_player(game_id, token, session_num, play_time):
