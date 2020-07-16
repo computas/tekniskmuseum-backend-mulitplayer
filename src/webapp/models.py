@@ -57,9 +57,9 @@ class MulitPlayer(db.Model):
     """
         Table for storing players who partisipate in the same game.
     """
-    game_id = db.Column(db.NVARCHAR(32), db.ForeignKey(Games.game_id), primary_key=True)
-    player_1 = db.Column(db.NVARCHAR(32), db.ForeignKey(PlayerInGame.token))
-    player_2 = db.Column(db.NVARCHAR(32), db.ForeignKey(PlayerInGame.token)) 
+    game_id = db.Column(db.NVARCHAR(32), primary_key=True)
+    player_1 = db.Column(db.NVARCHAR(32))
+    player_2 = db.Column(db.NVARCHAR(32)) 
 
 
 class Labels(db.Model):
@@ -202,10 +202,11 @@ def check_player2_in_mulitplayer():
         Function to check if player2 is none in database. If none, a player can be added to the game.
     """
     # If there is no rows with player_2=None, game will be None
-    game=MulitPlayer.query.filter_by(player_2=None).first()
+    game = MulitPlayer.query.filter_by(player_2=None).first()
     if game is not None:
-        game=game.pop().game_id
-    return game
+        return game.game_id
+    
+    return None
 
   
 def get_record_from_game(game_id):
@@ -259,15 +260,15 @@ def update_game_for_player(game_id, token, session_num, state):
     except Exception as e:
         raise Exception("Could not update game for player: " + str(e))
 
-def update_mulitplayer(player2_id, player1_id, game_id):
+def update_mulitplayer(player2_id, game_id):
     """
         Update mulitplayer with player 2's id.
     """
     try:
         mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-        player_1=PlayerInGame.query.get(player1_id)
-        player_1.game_state="Ready"
-        mp.player_2=player_id
+        player_1 = PlayerInGame.query.get(mp.player_1)
+        player_1.game_state = "Ready"
+        mp.player_2 = player2_id
         db.session.commit()
         return True
     except Exception as e:
