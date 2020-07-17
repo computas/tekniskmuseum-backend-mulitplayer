@@ -14,12 +14,14 @@
     <label for="uriIn">URI:</label>
     <input type="text" id="uriIn" value="ws://localhost:5000">
     <button onclick="connectToHost()">Connect</button>
+</div>
+
 <div>
   <h3>Output:</h3>
   <p id="out"></p>
 </div>
 
-<form id="eventData">
+<div id="eventData">
     <label for="event">Event:</label>
     <input type="text" id="event">
 
@@ -30,7 +32,7 @@
     <input type="file" id="image">
 
     <button onclick="emitEvent()">Send</button>
-</form>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
 <script type="text/javascript" charset="utf-8">
@@ -50,13 +52,13 @@
     // Event handlers
     socket.on('connect', function() {
         socket.emit('my event', {data: 'I\'m connected!'});
-	console.log(socket);
-	print("<b>connected to: </b>" + socket.io.uri);
+	    console.log(socket);
+	    print("<b>connected to: </b>" + socket.io.uri);
     });
 
     socket.on('message', function(message) {
         var output = document.createTextNode("message received: " + message);
-	print("<b>message received</b>: " + message);
+	    print("<b>message received</b>: " + message);
     });
 
     socket.on('connect_error', function(error) {
@@ -64,17 +66,15 @@
     });
 
     function print(message) {
-	document.getElementById("out").innerHTML += "<br>" + message;
+	    document.getElementById("out").innerHTML += "<br>" + message;
     }
 
     function emitEvent() {
         var input = document.getElementById("in").value;
         var eventName = document.getElementById("event").value;
         var image = document.getElementById("image").files[0];
-        var fd = new FormData();
-        fd.append("image", image);
-        socket.emit(eventName, input, fd);
-	print("<b>message sent: </b>" + input);
+        socket.emit(eventName, input, image);
+	    print("<b>message sent: </b>" + input);
     }
 </script>
 
