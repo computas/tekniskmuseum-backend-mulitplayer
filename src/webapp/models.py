@@ -197,13 +197,15 @@ def insert_into_mulitplayer(player_1, player_2, game_id):
         )
 
 
-def check_player2_in_mulitplayer():
+def check_player2_in_mulitplayer(player_id):
     """
         Function to check if player2 is none in database. If none, a player can be added to the game.
     """
     # If there is no rows with player_2=None, game will be None
     game = MulitPlayer.query.filter_by(player_2=None).first()
     if game is not None:
+        if game.player_1 == player_id:
+            raise excp.BadRequest("you can't join a game with yourself") 
         return game.game_id
     
     return None
