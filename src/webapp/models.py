@@ -49,7 +49,7 @@ class PlayerInGame(db.Model):
         foreign key to the game table.
     """
     token = db.Column(db.NVARCHAR(32), primary_key=True)
-    game_id = db.Column(db.NVARCHAR(32), nullable=False)
+    game_id = db.Column(db.NVARCHAR(32), primary_key=True, nullable=False)
     state = db.Column(db.String(32), nullable=False)
 
 
@@ -266,7 +266,7 @@ def update_mulitplayer(player2_id, game_id):
     """
     try:
         mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-        player_1 = PlayerInGame.query.get(mp.player_1)
+        player_1 = PlayerInGame.query.filter_by(token=mp.player_1).first()
         player_1.game_state = "Ready"
         mp.player_2 = player2_id
         db.session.commit()

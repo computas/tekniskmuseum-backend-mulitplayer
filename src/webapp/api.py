@@ -63,6 +63,7 @@ def handle_joinGame(json_data):
         models.update_mulitplayer(player_id, game_id)
         models.insert_into_player_in_game(player_id, game_id, "Ready")  # State not sure
         join_room(game_id)
+        print("PLAYER: " + player_id + " ADDED TO ROOM: " + game_id)
 
     else:
         game_id = uuid.uuid4().hex
@@ -72,6 +73,7 @@ def handle_joinGame(json_data):
         models.insert_into_player_in_game(player_id, game_id, "Waiting")
         models.insert_into_mulitplayer(player_id, None, game_id)
         join_room(game_id)
+        print("PLAYER: " + player_id + " ADDED TO ROOM: " + game_id)
 
 '''
 @socketio.on("newRound")
