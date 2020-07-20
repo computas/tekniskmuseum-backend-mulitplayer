@@ -23,7 +23,7 @@ class Iteration(db.Model):
 class Games(db.Model):
     """
        This is the Games model in the database. It is important that the
-       inserted values match the column values. Token column value cannot
+       inserted values match the column values. player_id column value cannot
        be String when a long hex is given.
     """
     game_id = db.Column(db.NVARCHAR(32), primary_key=True)
@@ -143,12 +143,12 @@ def insert_into_scores(name, score, date):
         )
 
 
-def insert_into_player_in_game(player_id, game_id, state):
+def insert_into_players(player_id, game_id, state):
     """
         Insert values into Players table.
 
         Parameters:
-        token: random uuid.uuid4().hex
+        player_id: random uuid.uuid4().hex
         game_id: random uuid.uuid4().hex
         state: string
     """
@@ -158,10 +158,10 @@ def insert_into_player_in_game(player_id, game_id, state):
         and isinstance(state, str)
     ):
         try:
-            player_in_game = Players(
+            player = Players(
                 player_id=player_id, game_id=game_id, state=state
             )
-            db.session.add(player_in_game)
+            db.session.add(player)
             db.session.commit()
             return True
         except Exception as e:
@@ -172,19 +172,20 @@ def insert_into_player_in_game(player_id, game_id, state):
         )
 
 
-def insert_into_mulitplayer(player_1, player_2, game_id):
+def insert_into_mulitplayer(player_1_id, player_2_id, game_id):
     """
         Docstring.
     """
-    player2_is_str_or_none = isinstance(player_2, str) or player_2 is None
+    player2_is_str_or_none = isinstance(
+        player_2_id, str) or player_2_id is None
     if (
-        isinstance(player_1, str)
+        isinstance(player_1_id, str)
         and player2_is_str_or_none
         and isinstance(game_id, str)
     ):
         try:
             mulitplayer = MulitPlayer(
-                player_1=player_1, player_2=player_2, game_id=game_id
+                player_1=player_1_id, player_2=player_1_id, game_id=game_id
             )
             db.session.add(mulitplayer)
             db.session.commit()
@@ -212,7 +213,7 @@ def check_player2_in_mulitplayer(player_id):
     return None
 
 
-def get_record_from_game(game_id):
+def get_game(game_id):
     """
         Return the game record with the corresponding game_id.
     """
@@ -223,15 +224,15 @@ def get_record_from_game(game_id):
     return game
 
 
-def get_record_from_player_in_game(token):
+def get_player(player_id):
     """
-        Return the player in game record with the corresponding token.
+        Return the player in game record with the corresponding player_id.
     """
-    player_in_game = Players.query.get(token)
-    if player_in_game is None:
-        raise excp.BadRequest("Token invalid or expired")
+    player = Players.query.get(player_id)
+    if player is None:
+        raise excp.BadRequest("player_id invalid or expired")
 
-    return player_in_game
+    return player
 
 
 def get_opponent(game_id, player_id):
@@ -250,14 +251,14 @@ def get_opponent(game_id, player_id):
 
 def update_game_for_player(game_id, player_id, ses_num, state):
     """
-        Update game and player_in_game record for the incomming game_id and
-        token with the given parameters.
+        Update game and player record for the incomming game_id and
+        player_id with the given parameters.
     """
     try:
         game = Games.query.get(game_id)
         game.session_num += ses_num
-        player_in_game = Players.query.get([player_id, game_id])
-        player_in_game.state = state
+        player = Players.query.get([player_id, game_id])
+        player.state = state
         db.session.commit()
         return True
     except Exception as e:
@@ -277,6 +278,21 @@ def update_mulitplayer(player2_id, game_id):
         return True
     except Exception as e:
         raise Exception("Could not update mulitplayer for player: " + str(e))
+
+
+def update_iteration_name(new_name):
+    """
+        updates the one only iteration_name to new_name
+    """
+    iteration = Iteration.query.filter_by().first()
+    if iteration is None:
+        iteration = Iteration(iteration_name=new_name)
+        db.session.add(iteration)
+    else:
+        iteration.iteration_name = new_name
+
+    db.session.commit()
+    return new_name
 
 
 def delete_session_from_game(game_id):
