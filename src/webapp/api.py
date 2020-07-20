@@ -7,7 +7,7 @@
 import json
 import uuid
 import datetime
-from base64 import decodestring
+from base64 import decodestring, decodebytes
 from webapp import models
 from flask import Flask
 from flask import request
@@ -42,6 +42,16 @@ def disconnect():
 @socketio.on("message")
 def handle_message(message):
     print("client: " + str(message))
+
+
+@socketio.on("filetest")
+def handle_filetest(json_data, image):
+    print(json_data)
+    img = decodestring(image)
+
+    print(decodestring(image))
+    with open("harambe.png", "wb") as f:
+        f.write(image)
 
 
 @socketio.on("joinGame")
@@ -110,9 +120,7 @@ def get_label():
 
 
 @socketio.on("classify")
-def handle_classify(json_data):
-    data = json.loads(json_data)
-    image = decodestring(json["image"])
+def handle_classify(json, image):
 
     # TODO: do classification here
     response = classifier.predict_image(image)
