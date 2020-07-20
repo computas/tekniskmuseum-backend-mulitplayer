@@ -280,6 +280,21 @@ def update_mulitplayer(player2_id, game_id):
         raise Exception("Could not update mulitplayer for player: " + str(e))
 
 
+def update_iteration_name(new_name):
+    """
+        updates the one only iteration_name to new_name
+    """
+    iteration = Iteration.query.filter_by().first()
+    if iteration is None:
+        iteration = Iteration(iteration_name=new_name)
+        db.session.add(iteration)
+    else:
+        iteration.iteration_name = new_name
+
+    db.session.commit()
+    return new_name
+
+
 def delete_session_from_game(game_id):
     """
         To avoid unecessary data in the database this function is called by
