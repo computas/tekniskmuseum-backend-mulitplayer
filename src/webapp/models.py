@@ -323,7 +323,18 @@ def delete_old_games():
     except Exception as e:
         db.session.rollback()
         raise Exception("Couldn't clean up old game records: " + str(e))
+def to_norwegian(english_label):
+    """
+        Reads the labels tabel and return the norwegian translation of the english word
+    """
+    try:
+        query = Labels.query.get(english_label)
+        return str(query.norwegian)
 
+    except AttributeError as e:
+        raise AttributeError(
+            "Could not find translation in Labels table: " + str(e)
+        )
 
 def seed_labels(app, filepath):
     """
