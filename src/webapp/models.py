@@ -59,7 +59,7 @@ class MulitPlayer(db.Model):
     """
     game_id = db.Column(db.NVARCHAR(32), primary_key=True)
     player_1 = db.Column(db.NVARCHAR(32))
-    player_2 = db.Column(db.NVARCHAR(32)) 
+    player_2 = db.Column(db.NVARCHAR(32))
 
 
 class Labels(db.Model):
@@ -199,18 +199,19 @@ def insert_into_mulitplayer(player_1, player_2, game_id):
 
 def check_player2_in_mulitplayer(player_id):
     """
-        Function to check if player2 is none in database. If none, a player can be added to the game.
+        Function to check if player2 is none in database. If none, a player
+        can be added to the game.
     """
     # If there is no rows with player_2=None, game will be None
     game = MulitPlayer.query.filter_by(player_2=None).first()
     if game is not None:
         if game.player_1 == player_id:
-            raise excp.BadRequest("you can't join a game with yourself") 
+            raise excp.BadRequest("you can't join a game with yourself")
         return game.game_id
-    
+
     return None
 
-  
+
 def get_record_from_game(game_id):
     """
         Return the game record with the corresponding game_id.
@@ -233,19 +234,20 @@ def get_record_from_player_in_game(token):
     return player_in_game
 
 
-def get_record_from_player_in_game_by_game_id():
+def get_record_from_player_in_game_by_game_id(game_id, player_id):
     """
         Return the player in game record with the corresponding token.
     """
-    mp=MulitPlayer.query.filter_by(game_id=game_id).first()
-    
+    mp = MulitPlayer.query.filter_by(game_id=game_id).first()
+
     if player_in_game is None:
         raise excp.BadRequest("Token invalid or expired")
-    elif mp.player_1== player_id:
+    elif mp.player_1 == player_id:
         player_in_game = PlayerInGame.query.get(mp.player_2)
-    elif mp.player_2== player_id:
+    elif mp.player_2 == player_id:
         player_in_game = PlayerInGame.query.get(mp.player_1)
     return player_in_game
+
 
 def update_game_for_player(game_id, token, session_num, state):
     """
@@ -262,6 +264,7 @@ def update_game_for_player(game_id, token, session_num, state):
     except Exception as e:
         raise Exception("Could not update game for player: " + str(e))
 
+
 def update_mulitplayer(player2_id, game_id):
     """
         Update mulitplayer with player 2's id.
@@ -275,6 +278,7 @@ def update_mulitplayer(player2_id, game_id):
         return True
     except Exception as e:
         raise Exception("Could not update mulitplayer for player: " + str(e))
+
 
 def delete_session_from_game(game_id):
     """
