@@ -123,7 +123,7 @@ def get_label():
 
 @socketio.on("classify")
 def handle_classify(json_data):
-    data = json.loads(json_data)
+    # data = json.loads(json_data)
     # TODO: do classification here
     response = {
         "foo": "bar"
@@ -135,3 +135,4 @@ def handle_classify(json_data):
 def handle_endGame(json_data):
     # TODO: implement me!
     data = json.loads(json_data)
+    emit("endGame", data)

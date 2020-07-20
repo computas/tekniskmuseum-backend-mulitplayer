@@ -158,10 +158,10 @@ def insert_into_players(player_id, game_id, state):
         and isinstance(state, str)
     ):
         try:
-            player_in_game = PlayerInGame(
+            player = Players(
                 player_id=player_id, game_id=game_id, state=state
             )
-            db.session.add(player_in_game)
+            db.session.add(player)
             db.session.commit()
             return True
         except Exception as e:
@@ -176,15 +176,16 @@ def insert_into_mulitplayer(player_1_id, player_2_id, game_id):
     """
         Docstring.
     """
-    player2_is_str_or_none = isinstance(player_2, str) or player_2 is None
+    player2_is_str_or_none = isinstance(
+        player_2_id, str) or player_2_id is None
     if (
-        isinstance(player_1, str)
+        isinstance(player_1_id, str)
         and player2_is_str_or_none
         and isinstance(game_id, str)
     ):
         try:
             mulitplayer = MulitPlayer(
-                player_1=player_1, player_2=player_2, game_id=game_id
+                player_1=player_1_id, player_2=player_1_id, game_id=game_id
             )
             db.session.add(mulitplayer)
             db.session.commit()
@@ -227,26 +228,28 @@ def get_player(player_id):
     """
         Return the player in game record with the corresponding player_id.
     """
-    player_in_game = PlayerInGame.query.get(player_id)
+    player_in_game = Players.query.get(player_id)
     if player_in_game is None:
         raise excp.BadRequest("player_id invalid or expired")
 
     return player_in_game
 
 
-def get_player_by_game_id(game_id, player_id):
+def get_opponent(game_id, player_id):
     """
         Return the player in game record with the corresponding player_id.
     """
-    mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-
+    # mp = MulitPlayer.query.filter_by(game_id=game_id).first()
+    '''
     if player_in_game is None:
         raise excp.BadRequest("player_id invalid or expired")
     elif mp.player_1 == player_id:
-        player_in_game = PlayerInGame.query.get(mp.player_2)
+        player_in_game = Players.query.get(mp.player_2)
     elif mp.player_2 == player_id:
-        player_in_game = PlayerInGame.query.get(mp.player_1)
+        player_in_game = Players.query.get(mp.player_1)
     return player_in_game
+    '''
+    pass
 
 
 def update_game_for_player(game_id, player_id, session_num, state):
@@ -257,7 +260,7 @@ def update_game_for_player(game_id, player_id, session_num, state):
     try:
         game = Games.query.get(game_id)
         game.session_num += 1
-        player_in_game = PlayerInGame.query.get(player_id)
+        player_in_game = Players.query.get(player_id)
         player_in_game.state = state
         db.session.commit()
         return True
@@ -271,7 +274,7 @@ def update_mulitplayer(player2_id, game_id):
     """
     try:
         mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-        player_1 = PlayerInGame.query.filter_by(player_id=mp.player_1).first()
+        player_1 = Players.query.filter_by(player_id=mp.player_1).first()
         player_1.game_state = "Ready"
         mp.player_2 = player2_id
         db.session.commit()
@@ -303,8 +306,8 @@ def delete_session_from_game(game_id):
     """
     try:
         game = Games.query.get(game_id)
-        db.session.query(PlayerInGame).filter(
-            PlayerInGame.game_id == game_id
+        db.session.query(Players).filter(
+            Players.game_id == game_id
         ).delete()
         db.session.delete(game)
         db.session.commit()
@@ -328,8 +331,8 @@ def delete_old_games():
             .all()
         )
         for game in games:
-            db.session.query(PlayerInGame).filter(
-                PlayerInGame.game_id == game.game_id
+            db.session.query(Players).filter(
+                Players.game_id == game.game_id
             ).delete()
             db.session.delete(game)
 
