@@ -91,22 +91,25 @@ def handle_newRound(json_data):
     # TODO: implement me!
     player_id = request.sid
     data = json.loads(json_data)
-    models.update_game_for_player(data["game_id"], player_id, "Ready")
-    player = models.get_record_from_player_in_game_by_game_id(data["game_id"], player_id)
-    if player.game_state == "Ready":
-        send("get_label()", room=data["game_id"])
+    game_id = data["game_id"]
+    models.update_game_for_player(game_id, player_id, 0, "ReadyToDraw")
+    player = models.get_opponent(game_id, player_id)
+    if player.state == "ReadyToDraw":
+        models.update_game_for_player(game_id, player_id, 1, "Waiting")
+        models.update_game_for_player(game_id, player.token, 0, "Waiting")
+        data = get_label(game_id)
+        send(data, room=game_id)
     else:
-        send("Player" + player_id + "is done", room=data["game_id"])
+        send("Player" + player_id + "is done", room=game_id)
 
 
-'''
-def get_label():
+
+def get_label(game_id):
     """
         Provides the client with a new word.
     """
-    token = request.values["token"]
-    player = models.get_record_from_player_in_game(token)
-    game = models.get_record_from_game(player.game_id)
+    
+    game = models.get_record_from_game(game_id)
 
     # Check if game complete
     if game.session_num > NUM_GAMES:
@@ -116,8 +119,8 @@ def get_label():
     label = labels[game.session_num - 1]
     norwegian_label = models.to_norwegian(label)
     data = {"label": norwegian_label}
-    return json.dumps(data), 200
-'''
+    return json.dumps(data)
+
 
 
 @socketio.on("classify")

@@ -234,7 +234,7 @@ def get_record_from_player_in_game(token):
     return player_in_game
 
 
-def get_record_from_player_in_game_by_game_id(game_id, player_id):
+def get_opponent(game_id, player_id):
     """
         Return the player in game record with the corresponding gameID.
     """
@@ -243,21 +243,21 @@ def get_record_from_player_in_game_by_game_id(game_id, player_id):
     if mp is None:
         raise excp.BadRequest("Token invalid or expired")
     elif mp.player_1 == player_id:
-        player_in_game = PlayerInGame.query.get(mp.player_2)
+        player_in_game = PlayerInGame.query.filter_by(player_id=mp.player_2).first()
     elif mp.player_2 == player_id:
-        player_in_game = PlayerInGame.query.get(mp.player_1)
+        player_in_game = PlayerInGame.query.filter_by(player_id=mp.player_1).first()
     return player_in_game
 
 
-def update_game_for_player(game_id, token, state):
+def update_game_for_player(game_id, token, ses_num, state):
     """
         Update game and player_in_game record for the incomming game_id and
         token with the given parameters.
     """
     try:
         game = Games.query.get(game_id)
-        game.session_num += 1
-        player_in_game = PlayerInGame.query.get(token)
+        game.session_num += ses_num
+        player_in_game = PlayerInGame.query.filter_by(token=token).first()
         player_in_game.state = state
         db.session.commit()
         return True
