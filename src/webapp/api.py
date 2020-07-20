@@ -8,7 +8,6 @@ import json
 import uuid
 import datetime
 from webapp import models
-import utilities
 from flask import Flask
 from flask import request
 from flask_socketio import (
@@ -66,8 +65,8 @@ def handle_joinGame(json_data):
         models.insert_into_player_in_game(player_id, game_id, "Ready")
         join_room(game_id)
         data = {
-            "PLAYER ID": player_id,
-            "GAME ID": game_id
+            "player_id": player_id,
+            "game_id": game_id
         }
         send(json.dumps(data), sid=game_id)
 
@@ -80,8 +79,8 @@ def handle_joinGame(json_data):
         models.insert_into_mulitplayer(player_id, None, game_id)
         join_room(game_id)
         data = {
-            "PLAYER ID": player_id,
-            "GAME ID": game_id
+            "player_id": player_id,
+            "game_id": game_id
         }
         send(json.dumps(data), sid=game_id)
 
@@ -93,34 +92,33 @@ def handle_newRound(json_data):
     data = json.loads(json_data)
     game_id = data["game_id"]
     models.update_game_for_player(game_id, player_id, 0, "ReadyToDraw")
-    player = models.get_opponent(game_id, player_id)
-    if player.state == "ReadyToDraw":
-        models.update_game_for_player(game_id, player_id, 1, "Waiting")
-        models.update_game_for_player(game_id, player.token, 0, "Waiting")
+    opponent = models.get_opponent(game_id, player_id)
+    if opponent.state == "ReadyToDraw":
         data = get_label(game_id)
+        models.update_game_for_player(game_id, player_id, 1, "Waiting")
+        models.update_game_for_player(game_id, opponent.token, 0, "Waiting")
         send(data, room=game_id)
     else:
         send("Player" + player_id + "is done", room=game_id)
-
 
 
 def get_label(game_id):
     """
         Provides the client with a new word.
     """
-    
     game = models.get_record_from_game(game_id)
 
     # Check if game complete
     if game.session_num > NUM_GAMES:
-        raise excp.BadRequest("Number of games exceeded")
+        send("Number of games exceeded")
 
     labels = json.loads(game.labels)
     label = labels[game.session_num - 1]
     norwegian_label = models.to_norwegian(label)
-    data = {"label": norwegian_label}
+    data = {
+        "label": norwegian_label
+    }
     return json.dumps(data)
-
 
 
 @socketio.on("classify")

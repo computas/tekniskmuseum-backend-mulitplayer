@@ -43,12 +43,12 @@ class Scores(db.Model):
     date = db.Column(db.Date)
 
 
-class PlayerInGame(db.Model):
+class Players(db.Model):
     """
         Table for attributes connected to a player in the game. game_id is a
         foreign key to the game table.
     """
-    token = db.Column(db.NVARCHAR(32), primary_key=True)
+    player_id = db.Column(db.NVARCHAR(32), primary_key=True)
     game_id = db.Column(db.NVARCHAR(32), primary_key=True, nullable=False)
     state = db.Column(db.String(32), nullable=False)
 
@@ -143,9 +143,9 @@ def insert_into_scores(name, score, date):
         )
 
 
-def insert_into_player_in_game(token, game_id, state):
+def insert_into_player_in_game(player_id, game_id, state):
     """
-        Insert values into PlayerInGame table.
+        Insert values into Players table.
 
         Parameters:
         token: random uuid.uuid4().hex
@@ -153,13 +153,13 @@ def insert_into_player_in_game(token, game_id, state):
         state: string
     """
     if (
-        isinstance(token, str)
+        isinstance(player_id, str)
         and isinstance(game_id, str)
         and isinstance(state, str)
     ):
         try:
-            player_in_game = PlayerInGame(
-                token=token, game_id=game_id, state=state
+            player_in_game = Players(
+                player_id=player_id, game_id=game_id, state=state
             )
             db.session.add(player_in_game)
             db.session.commit()
@@ -227,7 +227,7 @@ def get_record_from_player_in_game(token):
     """
         Return the player in game record with the corresponding token.
     """
-    player_in_game = PlayerInGame.query.get(token)
+    player_in_game = Players.query.get(token)
     if player_in_game is None:
         raise excp.BadRequest("Token invalid or expired")
 
@@ -241,15 +241,14 @@ def get_opponent(game_id, player_id):
     mp = MulitPlayer.query.filter_by(game_id=game_id).first()
 
     if mp is None:
+        # Needs to be changed to socket error
         raise excp.BadRequest("Token invalid or expired")
     elif mp.player_1 == player_id:
-        player_in_game = PlayerInGame.query.filter_by(token=mp.player_2).first()
-    elif mp.player_2 == player_id:
-        player_in_game = PlayerInGame.query.filter_by(token=mp.player_1).first()
-    return player_in_game
+        return Players.query.get([mp.player_2, game_id])
+    return Players.query.get([mp.player_1, game_id])
 
 
-def update_game_for_player(game_id, token, ses_num, state):
+def update_game_for_player(game_id, player_id, ses_num, state):
     """
         Update game and player_in_game record for the incomming game_id and
         token with the given parameters.
@@ -257,7 +256,7 @@ def update_game_for_player(game_id, token, ses_num, state):
     try:
         game = Games.query.get(game_id)
         game.session_num += ses_num
-        player_in_game = PlayerInGame.query.filter_by(token=token).first()
+        player_in_game = Players.query.get([player_id, game_id])
         player_in_game.state = state
         db.session.commit()
         return True
@@ -271,7 +270,7 @@ def update_mulitplayer(player2_id, game_id):
     """
     try:
         mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-        player_1 = PlayerInGame.query.filter_by(token=mp.player_1).first()
+        player_1 = Players.query.filter_by(player_id=mp.player_1).first()
         player_1.game_state = "Ready"
         mp.player_2 = player2_id
         db.session.commit()
@@ -288,8 +287,8 @@ def delete_session_from_game(game_id):
     """
     try:
         game = Games.query.get(game_id)
-        db.session.query(PlayerInGame).filter(
-            PlayerInGame.game_id == game_id
+        db.session.query(Players).filter(
+            Players.game_id == game_id
         ).delete()
         db.session.delete(game)
         db.session.commit()
@@ -313,8 +312,8 @@ def delete_old_games():
             .all()
         )
         for game in games:
-            db.session.query(PlayerInGame).filter(
-                PlayerInGame.game_id == game.game_id
+            db.session.query(Players).filter(
+                Players.game_id == game.game_id
             ).delete()
             db.session.delete(game)
 
@@ -323,9 +322,12 @@ def delete_old_games():
     except Exception as e:
         db.session.rollback()
         raise Exception("Couldn't clean up old game records: " + str(e))
+
+
 def to_norwegian(english_label):
     """
-        Reads the labels tabel and return the norwegian translation of the english word
+        Reads the labels tabel and return the norwegian translation of the
+        english word.
     """
     try:
         query = Labels.query.get(english_label)
@@ -335,6 +337,7 @@ def to_norwegian(english_label):
         raise AttributeError(
             "Could not find translation in Labels table: " + str(e)
         )
+
 
 def seed_labels(app, filepath):
     """
