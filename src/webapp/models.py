@@ -243,9 +243,9 @@ def get_opponent(game_id, player_id):
     if mp is None:
         raise excp.BadRequest("Token invalid or expired")
     elif mp.player_1 == player_id:
-        player_in_game = PlayerInGame.query.filter_by(player_id=mp.player_2).first()
+        player_in_game = PlayerInGame.query.filter_by(token=mp.player_2).first()
     elif mp.player_2 == player_id:
-        player_in_game = PlayerInGame.query.filter_by(player_id=mp.player_1).first()
+        player_in_game = PlayerInGame.query.filter_by(token=mp.player_1).first()
     return player_in_game
 
 
