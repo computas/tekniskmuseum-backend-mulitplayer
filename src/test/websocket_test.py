@@ -20,9 +20,7 @@ def test_classify_responds(client):
     r = ws_client.get_received()
 
     ws_client.emit("joinGame", {})
-    ws_client.emit("classify", json.dumps({}))
     r = ws_client.get_received()
 
     print(r)
-    assert r[1]["name"] == "prediction"
-    assert r[1]["args"][0]["foo"] == "bar"
+    assert r[0]["name"] == "message"

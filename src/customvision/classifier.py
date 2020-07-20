@@ -217,7 +217,7 @@ class Classifier:
             self.trainer.unpublish_iteration(self.project_id, oldest_iteration)
             self.trainer.delete_iteration(self.project_id, oldest_iteration)
 
-    def train(self, labels: list, test_url) -> None:
+    def train(self, labels: list) -> None:
         """
             Trains model on all labels specified in input list, exeption is raised by self.trainer.train_projec() is asked to train on non existent labels.
             Generates unique iteration name, publishes model and sets self.iteration_name if successful.
@@ -266,13 +266,19 @@ class Classifier:
             iteration_name,
             self.prediction_resource_id,
         )
-        try:
-            result, best_guess = self.predict_image_url(test_url)
-        except Exception as e:
-            print(e)
-
         with api.app.app_context():
             self.iteration_name = models.update_iteration_name(iteration_name)
+
+    def delete_all_images(self) -> None:
+        """
+            Function for deleting uploaded images in Customv Vision.
+        """
+        try:
+            self.trainer.delete_images(
+                self.project_id, all_images=True, all_iterations=True
+            )
+        except Exception as e:
+            raise Exception("Could not delete all images: " + str(e))
 
 
 def main():
@@ -299,7 +305,7 @@ def main():
         labels = models.get_all_labels()
 
     classifier.upload_images(labels)
-    classifier.train(labels, test_url)
+    classifier.train(labels)
 
 
 if __name__ == "__main__":

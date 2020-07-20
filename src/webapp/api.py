@@ -11,23 +11,15 @@ from base64 import decodestring
 from webapp import models
 from flask import Flask
 from flask import request
-from flask_socketio import (
-    SocketIO,
-    emit,
-    send,
-    join_room
-)
+from customvision.classifier import Classifier
+from flask_socketio import SocketIO, emit, send, join_room
 
 from customvision.classifier import Classifier
 
 
 # Initialize app
 app = Flask(__name__)
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    engineio_logger=False,
-)
+socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=False,)
 app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 models.create_tables(app)
@@ -66,12 +58,9 @@ def handle_joinGame(json_data):
         # Update mulitplayer table by inserting player_id for player_2 and
         # change state of palyer_1 in PIG to "Ready"
         models.update_mulitplayer(player_id, game_id)
-        models.insert_into_player_in_game(player_id, game_id, "Ready")
+        models.insert_into_players(player_id, game_id, "Ready")
         join_room(game_id)
-        data = {
-            "PLAYER ID": player_id,
-            "GAME ID": game_id
-        }
+        data = {"PLAYER ID": player_id, "GAME ID": game_id}
         send(json.dumps(data), sid=game_id)
 
     else:
@@ -79,13 +68,10 @@ def handle_joinGame(json_data):
         labels = models.get_n_labels(NUM_GAMES)
         today = datetime.datetime.today()
         models.insert_into_games(game_id, json.dumps(labels), today)
-        models.insert_into_player_in_game(player_id, game_id, "Waiting")
+        models.insert_into_players(player_id, game_id, "Waiting")
         models.insert_into_mulitplayer(player_id, None, game_id)
         join_room(game_id)
-        data = {
-            "PLAYER ID": player_id,
-            "GAME ID": game_id
-        }
+        data = {"PLAYER ID": player_id, "GAME ID": game_id}
         send(json.dumps(data), sid=game_id)
 
 
@@ -95,8 +81,9 @@ def handle_newRound(json_data):
     # TODO: implement me!
     player_id=request.sid
     data = json.loads(json_data)
+    #this function does not exist?
     models.update_player_in_game(player_id, data.game_id, "Ready")
-    game_state=models.get_record_from_player_in_game().state
+    game_state=models.get_game().state
     if game_state=="Ready":
         emit(get_label(), room=room)
     else:
@@ -107,7 +94,7 @@ def get_label():
         Provides the client with a new word.
     """
     token = request.values["token"]
-    player = models.get_record_from_player_in_game(token)
+    player = models.get_game(token)
     game = models.get_record_from_game(player.game_id)
 
     # Check if game complete
@@ -127,7 +114,6 @@ def handle_classify(json_data):
     data = json.loads(json_data)
     image = decodestring(json["image"])
 
-
     # TODO: do classification here
     response = classifier.predict_image(image)
     emit("prediction", response)
@@ -137,3 +123,4 @@ def handle_classify(json_data):
 def handle_endGame(json_data):
     # TODO: implement me!
     data = json.loads(json_data)
+    emit("endGame", data)
