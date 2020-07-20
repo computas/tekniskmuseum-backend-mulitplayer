@@ -7,6 +7,7 @@
 import json
 import uuid
 import datetime
+from base64 import decodestring
 from webapp import models
 from flask import Flask
 from flask import request
@@ -16,6 +17,8 @@ from flask_socketio import (
     send,
     join_room
 )
+
+from customvision.classifier import Classifier
 
 
 # Initialize app
@@ -29,6 +32,7 @@ app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 models.create_tables(app)
 models.seed_labels(app, "./dict_eng_to_nor.csv")
+classifier = Classifier()
 
 NUM_GAMES = 3  # This is placed here temporarily(?)
 
@@ -121,10 +125,11 @@ def get_label():
 @socketio.on("classify")
 def handle_classify(json_data):
     data = json.loads(json_data)
+    image = decodestring(json["image"])
+
+
     # TODO: do classification here
-    response = {
-        "foo": "bar"
-        }
+    response = classifier.predict_image(image)
     emit("prediction", response)
 
 

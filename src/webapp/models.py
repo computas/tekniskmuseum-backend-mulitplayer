@@ -17,6 +17,7 @@ class Iteration(db.Model):
     """
         Model for storing the currently used iteration of the ML model.
     """
+
     iteration_name = db.Column(db.String(64), primary_key=True)
 
 
@@ -26,6 +27,7 @@ class Games(db.Model):
        inserted values match the column values. Token column value cannot
        be String when a long hex is given.
     """
+
     game_id = db.Column(db.NVARCHAR(32), primary_key=True)
     session_num = db.Column(db.Integer, default=1)
     labels = db.Column(db.String(64))
@@ -37,6 +39,7 @@ class Scores(db.Model):
         This is the Scores model in the database. It is important that the
         inserted values match the column values.
     """
+
     score_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(32))
     score = db.Column(db.Integer, nullable=False)
@@ -48,18 +51,10 @@ class PlayerInGame(db.Model):
         Table for attributes connected to a player in the game. game_id is a
         foreign key to the game table.
     """
+
     token = db.Column(db.NVARCHAR(32), primary_key=True)
-    game_id = db.Column(db.NVARCHAR(32), primary_key=True, nullable=False)
-    state = db.Column(db.String(32), nullable=False)
-
-
-class MulitPlayer(db.Model):
-    """
-        Table for storing players who partisipate in the same game.
-    """
-    game_id = db.Column(db.NVARCHAR(32), primary_key=True)
-    player_1 = db.Column(db.NVARCHAR(32))
-    player_2 = db.Column(db.NVARCHAR(32))
+    game_id = db.Column(db.NVARCHAR(32), nullable=False)
+    state = db.Column(db.String(32))
 
 
 class Labels(db.Model):
@@ -69,6 +64,7 @@ class Labels(db.Model):
         - translating english labels into norwgian
         - keeping track of all possible labels
     """
+
     english = db.Column(db.String(32), primary_key=True)
     norwegian = db.Column(db.String(32))
 
@@ -143,6 +139,31 @@ def insert_into_scores(name, score, date):
         )
 
 
+def get_iteration_name():
+    """
+        Returns the first and only iteration name that should be in the model
+    """
+
+    iteration = Iteration.query.filter_by().first()
+    assert iteration.iteration_name is not None
+    return iteration.iteration_name
+
+
+def update_iteration_name(new_name):
+    """
+        updates the one only iteration_name to new_name
+    """
+    iteration = Iteration.query.filter_by().first()
+    if iteration is None:
+        iteration = Iteration(iteration_name=new_name)
+        db.session.add(iteration)
+    else:
+        iteration.iteration_name = new_name
+
+    db.session.commit()
+    return new_name
+
+
 def insert_into_player_in_game(token, game_id, state):
     """
         Insert values into PlayerInGame table.
@@ -172,46 +193,6 @@ def insert_into_player_in_game(token, game_id, state):
         )
 
 
-def insert_into_mulitplayer(player_1, player_2, game_id):
-    """
-        Docstring.
-    """
-    player2_is_str_or_none = isinstance(player_2, str) or player_2 is None
-    if (
-        isinstance(player_1, str)
-        and player2_is_str_or_none
-        and isinstance(game_id, str)
-    ):
-        try:
-            mulitplayer = MulitPlayer(
-                player_1=player_1, player_2=player_2, game_id=game_id
-            )
-            db.session.add(mulitplayer)
-            db.session.commit()
-            return True
-        except Exception as e:
-            raise Exception("Could not insert into mulitplayer: " + str(e))
-    else:
-        raise excp.BadRequest(
-            "All params has to be string."
-        )
-
-
-def check_player2_in_mulitplayer(player_id):
-    """
-        Function to check if player2 is none in database. If none, a player
-        can be added to the game.
-    """
-    # If there is no rows with player_2=None, game will be None
-    game = MulitPlayer.query.filter_by(player_2=None).first()
-    if game is not None:
-        if game.player_1 == player_id:
-            raise excp.BadRequest("you can't join a game with yourself")
-        return game.game_id
-
-    return None
-
-
 def get_record_from_game(game_id):
     """
         Return the game record with the corresponding game_id.
@@ -234,21 +215,22 @@ def get_record_from_player_in_game(token):
     return player_in_game
 
 
-def get_record_from_player_in_game_by_game_id(game_id, player_id):
+# DELETABLE
+def update_game(game_id, session_num, play_time):
     """
-        Return the player in game record with the corresponding token.
+        Update game record for the incomming token with the given parameters.
     """
-    mp = MulitPlayer.query.filter_by(game_id=game_id).first()
+    try:
+        game = Games.query.get(game_id)
+        game.session_num += 1
+        game.play_time = play_time
+        db.session.commit()
+        return True
+    except Exception:
+        raise Exception("Couldn't update game.")
 
-    if player_in_game is None:
-        raise excp.BadRequest("Token invalid or expired")
-    elif mp.player_1 == player_id:
-        player_in_game = PlayerInGame.query.get(mp.player_2)
-    elif mp.player_2 == player_id:
-        player_in_game = PlayerInGame.query.get(mp.player_1)
-    return player_in_game
 
-
+# ALTERNATIVE FUNC FOR UPDATE GAME TO ALSO WORK FOR MULTI
 def update_game_for_player(game_id, token, session_num, state):
     """
         Update game and player_in_game record for the incomming game_id and
@@ -263,21 +245,6 @@ def update_game_for_player(game_id, token, session_num, state):
         return True
     except Exception as e:
         raise Exception("Could not update game for player: " + str(e))
-
-
-def update_mulitplayer(player2_id, game_id):
-    """
-        Update mulitplayer with player 2's id.
-    """
-    try:
-        mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-        player_1 = PlayerInGame.query.filter_by(token=mp.player_1).first()
-        player_1.game_state = "Ready"
-        mp.player_2 = player2_id
-        db.session.commit()
-        return True
-    except Exception as e:
-        raise Exception("Could not update mulitplayer for player: " + str(e))
 
 
 def delete_session_from_game(game_id):
@@ -325,6 +292,67 @@ def delete_old_games():
         raise Exception("Couldn't clean up old game records: " + str(e))
 
 
+def get_daily_high_score():
+    """
+        Function for reading all daily scores.
+
+        Returns list of dictionaries.
+    """
+    try:
+        today = datetime.date.today()
+        # filter by today and sort by score
+        top_n_list = (
+            Scores.query.filter_by(date=today)
+            .order_by(Scores.score.desc())
+            .all()
+        )
+        # structure data
+        new = [
+            {"name": player.name, "score": player.score}
+            for player in top_n_list
+        ]
+        return new
+
+    except AttributeError as e:
+        raise AttributeError(
+            "Could not read daily highscore from database: " + str(e)
+        )
+
+
+def get_top_n_high_score_list(top_n):
+    """
+        Funtion for reading tootal top n list from database.
+
+        Parameter: top_n, number of players in top list.
+
+        Returns list of dictionaries.
+    """
+    try:
+        # read top n high scores
+        top_n_list = (
+            Scores.query.order_by(Scores.score.desc()).limit(top_n).all()
+        )
+        # strucutre data
+        new = [
+            {"name": player.name, "score": player.score}
+            for player in top_n_list
+        ]
+        return new
+
+    except AttributeError as e:
+        raise AttributeError(
+            "Could not read top high score from database: " + str(e)
+        )
+
+
+def drop_table(table):
+    """
+        Function for dropping a table, or all.
+    """
+    # Calling 'drop_table' with None as parameter means dropping all tables.
+    db.drop_all(bind=table)
+
+
 def seed_labels(app, filepath):
     """
         Function for updating labels in database.
@@ -364,7 +392,7 @@ def insert_into_labels(english, norwegian):
 
 def get_n_labels(n):
     """
-        Reads all rows from database and chooses 3 random labels in a list
+        Reads all rows from database and chooses n random labels in a list
     """
     try:
         # read all english labels in database
@@ -375,3 +403,30 @@ def get_n_labels(n):
 
     except Exception as e:
         raise Exception("Could not read Labels table: " + str(e))
+
+
+def get_all_labels():
+    """
+        Reads all labels from database
+    """
+    try:
+        # read all english labels in database
+        labels = Labels.query.all()
+        return [str(label.english) for label in labels]
+
+    except Exception as e:
+        raise Exception("Could not read Labels table: " + str(e))
+
+
+def to_norwegian(english_label):
+    """
+        Reads the labels tabel and return the norwegian translation of the english word
+    """
+    try:
+        query = Labels.query.get(english_label)
+        return str(query.norwegian)
+
+    except AttributeError as e:
+        raise AttributeError(
+            "Could not find translation in Labels table: " + str(e)
+        )
