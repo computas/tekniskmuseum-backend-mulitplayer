@@ -8,7 +8,8 @@ TOP_N = 10
 NUM_GAMES = 3
 # certainties from costum vision lower than this -> haswon=False
 CERTAINTY_THRESHOLD = 0.5
-# custom vision can't have more than 10 iterations at a time, if more classifier.py will delete the oldest iteration
+# custom vision can't have more than 10 iterations at a time,
+# if more classifier.py will delete the oldest iteration
 CV_MAX_ITERATIONS = 10
 # can't upload more than 64 images at a time, if more
 CV_MAX_IMAGES = 64
@@ -25,7 +26,8 @@ class Flask_config:
 
     else:
         # Connection string for production database
-        con_str = Keys.get("TEST_DB_CONNECTION_STRING")  # REMEMBER TO CHANGE BACK TO GAMEDB
+        # REMEMBER TO CHANGE BACK TO GAMEDB
+        con_str = Keys.get("TEST_DB_CONNECTION_STRING")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = con_str

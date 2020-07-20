@@ -22,8 +22,8 @@ else:
 class Keys:
     def get(keyName):
         """
-            Returns secret matching the key. Returns appropriate error message if key
-            is not found.
+            Returns secret matching the key. Returns appropriate error message
+            if key is not found.
         """
         try:
             return keys[keyName]
