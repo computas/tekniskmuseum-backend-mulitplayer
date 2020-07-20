@@ -70,7 +70,12 @@ def handle_joinGame(json_data):
             "player_id": player_id,
             "game_id": game_id
         }
-        send(json.dumps(data), sid=game_id)
+
+        state = {
+            "Ready": True
+        }
+        emit(json.dumps(data), sid=player_id)
+        emit(json.dumps(state), room=game_id)
 
     else:
         game_id = uuid.uuid4().hex
@@ -84,7 +89,12 @@ def handle_joinGame(json_data):
             "player_id": player_id,
             "game_id": game_id
         }
-        send(json.dumps(data), sid=game_id)
+        state = {
+            "Ready": False
+        }
+        emit(json.dumps(data), sid=player_id)
+        emit(json.dumps(state), room=game_id)
+
 
 
 @socketio.on("newRound")
@@ -99,9 +109,9 @@ def handle_newRound(json_data):
         data = get_label(game_id)
         models.update_game_for_player(game_id, player_id, 1, "Waiting")
         models.update_game_for_player(game_id, opponent.player_id, 0, "Waiting")
-        send(data, room=game_id)
+        emit(data, room=game_id)
     else:
-        send("Player" + player_id + "is done", room=game_id)
+        emit("Player " + player_id + " is waiting to begin", room=game_id)
 
 
 def get_label(game_id):
