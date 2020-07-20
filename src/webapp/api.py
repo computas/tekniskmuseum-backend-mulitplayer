@@ -81,11 +81,11 @@ def handle_newRound(json_data):
     player_id=request.sid
     data = json.loads(json_data)
     models.update_game_for_player(data["game_id"], player_id, "Ready")
-    game_state=models.get_record_from_player_in_game_by_game_id(data["game_id"]).state
+    game_state=models.get_record_from_player_in_game_by_game_id(data["game_id"], player_id).state
     if game_state=="Ready":
         send("get_label()", room=data["game_id"])
     else:
-        send("Player" + player_id + "is done", room=room)
+        send("Player" + player_id + "is done", room=data["game_id"])
 '''
 def get_label():
     """

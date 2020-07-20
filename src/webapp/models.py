@@ -231,7 +231,7 @@ def get_record_from_player_in_game(token):
     return player_in_game
 
 
-def get_record_from_player_in_game_by_game_id(game_id):
+def get_record_from_player_in_game_by_game_id(game_id, player_id):
     """
         Return the player in game record with the corresponding gameID.
     """
