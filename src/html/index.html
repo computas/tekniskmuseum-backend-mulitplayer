@@ -41,28 +41,17 @@
             print("<b>connected to host: </b>" + socket.io.uri);
         });
 
-<<<<<<< HEAD
+        // Event handlers
+        socket.on('connect', function () {
+            socket.emit('my event', { data: 'I\'m connected!' });
+            console.log(socket);
+            print("<b>connected to host: </b>" + socket.io.uri);
+        });
+
         socket.on('message', function (message) {
             var output = document.createTextNode("message received: " + message);
             print("<b>message received</b>: " + message);
         });
-
-        socket.on('connect_error', function (error) {
-            print("<b>connection lost: </b>" + error.message);
-        });
-=======
-    // Event handlers
-    socket.on('connect', function() {
-        socket.emit('my event', {data: 'I\'m connected!'});
-	    console.log(socket);
-	    print("<b>connected to host: </b>" + socket.io.uri);
-    });
-
-    socket.on('message', function(message) {
-        var output = document.createTextNode("message received: " + message);
-	    print("<b>message received</b>: " + message);
-    });
->>>>>>> c563746c66724a58635d359f2ca7e4de480c3625
 
         function print(message) {
             document.getElementById("out").innerHTML += "<br>" + message;
