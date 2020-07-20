@@ -34,13 +34,13 @@
     // Event handlers
     socket.on('connect', function() {
         socket.emit('my event', {data: 'I\'m connected!'});
-	console.log(socket);
-	print("<b>connected to host: </b>" + socket.io.uri);
+	    console.log(socket);
+	    print("<b>connected to host: </b>" + socket.io.uri);
     });
 
     socket.on('message', function(message) {
         var output = document.createTextNode("message received: " + message);
-	print("<b>message received</b>: " + message);
+	    print("<b>message received</b>: " + message);
     });
 
     socket.on('connect_error', function(error) {
@@ -55,7 +55,7 @@
         var input = document.getElementById("in").value;
         var eventName = document.getElementById("event").value;
         socket.emit(eventName, input);
-	print("<b>message sent: </b>" + input);
+	    print("<b>message sent: </b>" + input);
         document.getElementById("in").value = "";
     }
 </script>
