@@ -93,7 +93,8 @@ def handle_newRound(json_data):
     # TODO: implement me!
     player_id=request.sid
     data = json.loads(json_data)
-    models.update_player_in_game(player_id, data.game_id, "Ready") #this function does not exist?
+    #this function does not exist?
+    models.update_player_in_game(player_id, data.game_id, "Ready")
     game_state=models.get_game().state
     if game_state=="Ready":
         emit(get_label(), room=room)
