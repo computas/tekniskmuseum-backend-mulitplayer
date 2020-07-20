@@ -24,5 +24,5 @@ def test_classify_responds(client):
     r = ws_client.get_received()
 
     print(r)
-    assert r[0]["name"] == "prediction"
-    assert r[0]["args"][0]["foo"] == "bar"
+    assert r[1]["name"] == "prediction"
+    assert r[1]["args"][0]["foo"] == "bar"
