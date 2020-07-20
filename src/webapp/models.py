@@ -73,6 +73,16 @@ class Labels(db.Model):
     norwegian = db.Column(db.String(32))
 
 
+class MulitPlayer(db.Model):
+    """
+        Table for storing players who partisipate in the same game.
+    """
+
+    game_id = db.Column(db.NVARCHAR(32), primary_key=True)
+    player_1 = db.Column(db.NVARCHAR(32))
+    player_2 = db.Column(db.NVARCHAR(32))
+
+
 # Functions to manipulate the tables above
 def create_tables(app):
     """
