@@ -1,3 +1,3 @@
-cd src/webapp
+cd src
 clear
-python app.py
+python -m webapp.app

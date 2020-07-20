@@ -8,6 +8,7 @@ import json
 import uuid
 import datetime
 from webapp import models
+import utilities
 from flask import Flask
 from flask import request
 from flask_socketio import (
@@ -73,19 +74,19 @@ def handle_joinGame(json_data):
         models.insert_into_mulitplayer(player_id, None, game_id)
         join_room(game_id)
 
-'''
+
 @socketio.on("newRound")
 def handle_newRound(json_data):
     # TODO: implement me!
     player_id=request.sid
     data = json.loads(json_data)
-    models.update_player_in_game(player_id, data.game_id, "Ready")
-    game_state=models.get_record_from_player_in_game().state
+    models.update_game_for_player(data["game_id"], player_id, "Ready")
+    game_state=models.get_record_from_player_in_game_by_game_id(data["game_id"]).state
     if game_state=="Ready":
-        emit(get_label(), room=room)
+        send("get_label()", room=data["game_id"])
     else:
-        emit("Player" + player_id + "is done", room=room)
-
+        send("Player" + player_id + "is done", room=room)
+'''
 def get_label():
     """
         Provides the client with a new word.

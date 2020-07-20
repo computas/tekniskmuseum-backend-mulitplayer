@@ -231,21 +231,21 @@ def get_record_from_player_in_game(token):
     return player_in_game
 
 
-def get_record_from_player_in_game_by_game_id():
+def get_record_from_player_in_game_by_game_id(game_id):
     """
-        Return the player in game record with the corresponding token.
+        Return the player in game record with the corresponding gameID.
     """
-    mp=MulitPlayer.query.filter_by(game_id=game_id).first()
+    mp = MulitPlayer.query.filter_by(game_id = game_id).first()
     
-    if player_in_game is None:
+    if mp is None:
         raise excp.BadRequest("Token invalid or expired")
-    elif mp.player_1== player_id:
+    elif mp.player_1 == player_id:
         player_in_game = PlayerInGame.query.get(mp.player_2)
-    elif mp.player_2== player_id:
+    elif mp.player_2 == player_id:
         player_in_game = PlayerInGame.query.get(mp.player_1)
     return player_in_game
 
-def update_game_for_player(game_id, token, session_num, state):
+def update_game_for_player(game_id, token, state):
     """
         Update game and player_in_game record for the incomming game_id and
         token with the given parameters.
