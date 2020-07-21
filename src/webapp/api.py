@@ -26,9 +26,7 @@ models.db.init_app(app)
 models.create_tables(app)
 models.seed_labels(app, "./dict_eng_to_nor.csv")
 classifier = Classifier()
-
 NUM_GAMES = 3  # This is placed here temporarily(?)
-print("ok")
 
 
 @socketio.on("connect")
@@ -124,12 +122,18 @@ def get_label(game_id):
 
 
 @socketio.on("classify")
-def handle_classify(json, image):
+def handle_classify(data, image):
 
     # TODO: do classification here
     image_stream = BytesIO(image)
-    # response = classifier.predict_image(image_stream)
-    response = {}
+    allowed_file(image_stream)
+
+    prob_kv, best_guess = classifier.predict_image(image_stream)
+
+    player_id = request.sid
+    time_left = float(data["time"])
+
+    response = {"cerainty": prob_kv, "guess": best_guess, "hasWon": False}
     emit("prediction", response)
 
 
@@ -138,3 +142,23 @@ def handle_endGame(json_data):
     # TODO: implement me!
     data = json.loads(json_data)
     emit("endGame", data)
+
+
+def allowed_file(image):
+    """
+        Check if image satisfies the constraints of Custom Vision.
+    """
+    if image.filename == "":
+        raise excp.BadRequest("No image submitted")
+
+    # Check that the file is a png
+    is_png = image.content_type == "image/png"
+    # Ensure the file isn't too large
+    too_large = len(image.read()) > 4000000
+    # Ensure the file has correct resolution
+    image.seek(0)
+    height, width = Image.open(BytesIO(image.stream.read())).size
+    image.seek(0)
+    correct_res = (height >= 256) and (width >= 256)
+    if not is_png or too_large or not correct_res:
+        raise excp.UnsupportedMediaType("Wrong image format")

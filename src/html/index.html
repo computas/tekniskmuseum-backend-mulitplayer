@@ -43,6 +43,10 @@
         socket.on('connect_error', function (error) {
             print("<b>connection lost: </b>" + error.message);
         });
+        socket.on('prediction', function (message) {
+            var output = document.createTextNode("message received: " + message);
+            print("<b>message received</b>: " + message);
+        });
         function print(message) {
             document.getElementById("out").innerHTML += "<br>" + message;
         }
