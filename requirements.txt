@@ -6,3 +6,4 @@ azure-cognitiveservices-vision-customvision==2.0.0
 azure-common==1.1.25
 azure-core==1.6.0
 azure-storage-blob==12.3.2
+Pillow==7.0.0

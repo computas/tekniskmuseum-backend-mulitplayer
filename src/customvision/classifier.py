@@ -96,7 +96,7 @@ class Classifier:
         """
         with api.app.app_context():
             self.iteration_name = models.get_iteration_name()
-        res = self.predictor.classify_image_url(
+        res = self.predictor.classify_image_url_with_no_store(
             self.project_id, self.iteration_name, img_url
         )
         pred_kv = dict([(i.tag_name, i.probability) for i in res.predictions])
@@ -121,7 +121,7 @@ class Classifier:
         """
         with api.app.app_context():
             self.iteration_name = models.get_iteration_name()
-        res = self.predictor.classify_image(
+        res = self.predictor.classify_image_with_no_store(
             self.project_id, self.iteration_name, img
         )
         # reset the file head such that it does not affect the state of the file handle
@@ -135,7 +135,7 @@ class Classifier:
             Helper method used by upload_images() to upload URL chunks of 64, which is maximum chunk size in Azure Custom Vision.
         """
         for i in range(0, len(lst), n):
-            yield lst[i: i + n]
+            yield lst[i : i + n]
 
     def upload_images(self, labels: List) -> None:
         """
@@ -275,7 +275,8 @@ class Classifier:
         """
         try:
             self.trainer.delete_images(
-                self.project_id, all_images=True, all_iterations=True)
+                self.project_id, all_images=True, all_iterations=True
+            )
         except Exception as e:
             raise Exception("Could not delete all images: " + str(e))
 
