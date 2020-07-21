@@ -56,10 +56,6 @@ class Players(db.Model):
     game_id = db.Column(db.NVARCHAR(32), primary_key=True, nullable=False)
     state = db.Column(db.String(32), nullable=False)
 
-    token = db.Column(db.NVARCHAR(32), primary_key=True)
-    game_id = db.Column(db.NVARCHAR(32), nullable=False)
-    state = db.Column(db.String(32))
-
 
 class Labels(db.Model):
     """

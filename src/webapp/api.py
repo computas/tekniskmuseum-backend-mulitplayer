@@ -65,15 +65,11 @@ def handle_joinGame(json_data):
     """
     player_id = request.sid
     game_id = models.check_player2_in_mulitplayer(player_id)
-    join_room(game_id)
     if game_id is not None:
         # Update mulitplayer table by inserting player_id for player_2 and
         # change state of palyer_1 in PIG to "Ready"
         models.update_mulitplayer(player_id, game_id)
         models.insert_into_players(player_id, game_id, "Ready")
-        join_room(game_id)
-        data = {"player_id": player_id, "game_id": game_id}
-        send(json.dumps(data), sid=game_id)
 
     else:
         game_id = uuid.uuid4().hex
@@ -82,9 +78,10 @@ def handle_joinGame(json_data):
         models.insert_into_games(game_id, json.dumps(labels), today)
         models.insert_into_players(player_id, game_id, "Waiting")
         models.insert_into_mulitplayer(game_id, player_id, None)
-        join_room(game_id)
-        data = {"player_id": player_id, "game_id": game_id}
-        send(json.dumps(data), sid=game_id)
+
+    join_room(game_id)
+    data = {"player_id": player_id, "game_id": game_id}
+    send(json.dumps(data), sid=game_id)
 
 
 @socketio.on("newRound")
