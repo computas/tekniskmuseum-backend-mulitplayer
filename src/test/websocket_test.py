@@ -24,7 +24,7 @@ def test_join_game_responds(client):
     r = ws_client.get_received()
 
     print(r)
-    assert r[0]["name"] == "message"
+    assert r[0]["name"] == "player_info"
 
 
 def test_classification_correct(client):
@@ -32,8 +32,12 @@ def test_classification_correct(client):
 
     assert ws_client.is_connected()
 
-    # ws_client.emit("joinGame", {})
+    ws_client.emit("joinGame", {})
 
+    r = ws_client.get_received()
+    print(r[0]["args"][0])
+    args = json.loads(r[0]["args"][0])
+    game_id = args["game_id"]
     path = "harambe.png"
     with open(path, "rb") as hh:
         data_stream = hh.read()
@@ -47,10 +51,18 @@ def test_classification_correct(client):
             stream=tmp, filename=path, content_type=content_type
         )
 
-        ws_client.emit("classify", {}, image)
+        data = {"game_id": game_id, "time_left": 1}
+
+        ws_client.emit("classify", data, image.stream.read())
 
     r = ws_client.get_received()
 
-    assert r[1]["name"] == "prediction"
-    print(r[1])
-    assert False
+    print(r)
+    assert r[0]["name"] == "prediction"
+    assert type(r[0]["args"][0]["certainty"]) is dict
+    assert type(r[0]["args"][0]["guess"]) is str
+    assert type(r[0]["args"][0]["hasWon"]) is bool
+
+
+def test_player_correct_state_after_classify(client):
+    pass

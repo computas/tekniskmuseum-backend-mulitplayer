@@ -441,3 +441,16 @@ def get_iteration_name():
     iteration = Iteration.query.filter_by().first()
     assert iteration.iteration_name is not None
     return iteration.iteration_name
+
+
+def get_translation_dict():
+    """
+        Reads all labels from database and create dictionary
+    """
+    try:
+        labels = Labels.query.all()
+        return dict(
+            [(str(label.english), str(label.norwegian)) for label in labels]
+        )
+    except Exception as e:
+        raise Exception("Could not read Labels table: " + str(e))

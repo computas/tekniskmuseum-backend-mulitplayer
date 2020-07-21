@@ -127,16 +127,45 @@ def get_label(game_id):
     return json.dumps(data)
 
 
+def translate_probabilities(labels):
+    translation_dict = models.get_translation_dict()
+    return dict(
+        [(translation_dict[label], prob) for label, prob in labels.items()]
+    )
+
+
 @socketio.on("classify")
 def handle_classify(data, image):
-
-    # TODO: do classification here
     image_stream = BytesIO(image)
     allowed_file(image_stream)
 
     prob_kv, best_guess = classifier.predict_image(image_stream)
 
-    response = {"cerainty": prob_kv, "guess": best_guess, "hasWon": False}
+    player_id = request.sid
+    game_id = data["game_id"]
+    time_left = data["time_left"]
+
+    game = models.get_game(game_id)
+
+    labels = json.loads(game.labels)
+    correct_label = labels[game.session_num]
+
+    has_won = correct_label == best_guess and time_left > 0
+
+    if has_won:
+        models.update_game_for_player(player_id, game_id, 1, "Done")
+        opponent = models.get_opponent(game_id, player_id)
+        opponent_done = opponent.state == "Done"
+
+        if opponent_done:
+            emit("round_over", room=game_id)
+
+    response = {
+        "certainty": translate_probabilities(prob_kv),
+        "guess": models.to_norwegian(best_guess),
+        "correctLabel": models.to_norwegian(correct_label),
+        "hasWon": has_won,
+    }
     emit("prediction", response)
 
 
