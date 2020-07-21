@@ -60,17 +60,24 @@ def handle_joinGame(json_data):
     """
     player_id = request.sid
     game_id = models.check_player2_in_mulitplayer(player_id)
+
     if game_id is not None:
         # Update mulitplayer table by inserting player_id for player_2 and
         # change state of palyer_1 in PIG to "Ready"
         models.update_mulitplayer(player_id, game_id)
         models.insert_into_players(player_id, game_id, "Ready")
         join_room(game_id)
+
         data = {
+            "player": "player_2",
             "player_id": player_id,
-            "game_id": game_id
+            "game_id": game_id,
         }
-        send(json.dumps(data), sid=game_id)
+        state = {
+            "ready": True
+        }
+        emit("player_info", json.dumps(data), sid=player_id)
+        emit("state_info", json.dumps(state), room=game_id)
 
     else:
         game_id = uuid.uuid4().hex
@@ -81,10 +88,15 @@ def handle_joinGame(json_data):
         models.insert_into_mulitplayer(game_id, player_id, None)
         join_room(game_id)
         data = {
+            "player": "player_1",
             "player_id": player_id,
             "game_id": game_id
         }
-        send(json.dumps(data), sid=game_id)
+        state = {
+            "ready": False
+        }
+        emit("player_info", json.dumps(data), sid=player_id)
+        emit("state_info", json.dumps(state), room=game_id)
 
 
 @socketio.on("newRound")
@@ -97,18 +109,26 @@ def handle_newRound(json_data):
     opponent = models.get_opponent(game_id, player_id)
     if opponent.state == "ReadyToDraw":
         data = get_label(game_id)
+        state = {
+            "ready": True
+        }
         models.update_game_for_player(game_id, player_id, 1, "Waiting")
         models.update_game_for_player(game_id, opponent.player_id, 0, "Waiting")
-        send(data, room=game_id)
+        emit("get_label", data, room=game_id)
+        emit("state_info", json.dumps(state), room=game_id)
+        #send(data, room=game_id)
     else:
-        send("Player" + player_id + "is done", room=game_id)
+        state = {
+            "ready": False
+        }
+        emit("state_info", json.dumps(state), room=game_id)
 
 
 def get_label(game_id):
     """
         Provides the client with a new word.
     """
-    game = models.get_record_from_game(game_id)
+    game = models.get_game(game_id)
 
     # Check if game complete
     if game.session_num > NUM_GAMES:
