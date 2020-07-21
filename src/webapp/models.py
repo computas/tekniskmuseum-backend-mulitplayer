@@ -247,7 +247,6 @@ def get_opponent(game_id, player_id):
         Return the player in game record with the corresponding gameID.
     """
     mp = MulitPlayer.query.get(game_id)
-
     if mp is None:
         # Needs to be changed to socket error
         raise excp.BadRequest("Token invalid or expired")
