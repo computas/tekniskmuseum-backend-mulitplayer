@@ -423,7 +423,6 @@ def get_iteration_name():
     """
         Returns the first and only iteration name that should be in the model
     """
-
     iteration = Iteration.query.filter_by().first()
     assert iteration.iteration_name is not None
     return iteration.iteration_name
