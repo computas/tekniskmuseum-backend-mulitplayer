@@ -155,7 +155,7 @@ def insert_into_scores(name, score, date):
 
 def insert_into_players(player_id, game_id, state):
     """
-        Insert values into PlayerInGame table.
+        Insert values into Players table.
 
         Parameters:
         player_id: random uuid.uuid4().hex
@@ -178,7 +178,7 @@ def insert_into_players(player_id, game_id, state):
         raise excp.BadRequest("All params has to be string.")
 
 
-def insert_into_mulitplayer(player_1_id, player_2_id, game_id):
+def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
     """
         Docstring.
     """
@@ -192,7 +192,7 @@ def insert_into_mulitplayer(player_1_id, player_2_id, game_id):
     ):
         try:
             mulitplayer = MulitPlayer(
-                player_1=player_1_id, player_2=player_1_id, game_id=game_id
+                player_1=player_1_id, player_2=player_2_id, game_id=game_id
             )
             db.session.add(mulitplayer)
             db.session.commit()
@@ -233,40 +233,37 @@ def get_player(player_id):
     """
         Return the player in game record with the corresponding player_id.
     """
-    player_in_game = Players.query.get(player_id)
-    if player_in_game is None:
+    player = Players.query.get(player_id)
+    if player is None:
         raise excp.BadRequest("player_id invalid or expired")
 
-    return player_in_game
+    return player
 
 
 def get_opponent(game_id, player_id):
     """
-        Return the player in game record with the corresponding player_id.
+        Return the player in game record with the corresponding gameID.
     """
-    # mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-    """
-    if player_in_game is None:
-        raise excp.BadRequest("player_id invalid or expired")
+    mp = MulitPlayer.query.filter_by(game_id=game_id).first()
+
+    if mp is None:
+        # Needs to be changed to socket error
+        raise excp.BadRequest("Token invalid or expired")
     elif mp.player_1 == player_id:
-        player_in_game = Players.query.get(mp.player_2)
-    elif mp.player_2 == player_id:
-        player_in_game = Players.query.get(mp.player_1)
-    return player_in_game
-    """
-    pass
+        return Players.query.get([mp.player_2, game_id])
+    return Players.query.get([mp.player_1, game_id])
 
 
-def update_game_for_player(game_id, player_id, session_num, state):
+def update_game_for_player(game_id, player_id, ses_num, state):
     """
-        Update game and player_in_game record for the incomming game_id and
+        Update game and player record for the incomming game_id and
         player_id with the given parameters.
     """
     try:
         game = Games.query.get(game_id)
-        game.session_num += 1
-        player_in_game = Players.query.get(player_id)
-        player_in_game.state = state
+        game.session_num += ses_num
+        player = Players.query.get([player_id, game_id])
+        player.state = state
         db.session.commit()
         return True
     except Exception as e:
@@ -346,65 +343,19 @@ def delete_old_games():
         raise Exception("Couldn't clean up old game records: " + str(e))
 
 
-def get_daily_high_score():
+def to_norwegian(english_label):
     """
-        Function for reading all daily scores.
-
-        Returns list of dictionaries.
+        Reads the labels tabel and return the norwegian translation of the
+        english word.
     """
     try:
-        today = datetime.date.today()
-        # filter by today and sort by score
-        top_n_list = (
-            Scores.query.filter_by(date=today)
-            .order_by(Scores.score.desc())
-            .all()
-        )
-        # structure data
-        new = [
-            {"name": player.name, "score": player.score}
-            for player in top_n_list
-        ]
-        return new
+        query = Labels.query.get(english_label)
+        return str(query.norwegian)
 
     except AttributeError as e:
         raise AttributeError(
-            "Could not read daily highscore from database: " + str(e)
+            "Could not find translation in Labels table: " + str(e)
         )
-
-
-def get_top_n_high_score_list(top_n):
-    """
-        Funtion for reading tootal top n list from database.
-
-        Parameter: top_n, number of players in top list.
-
-        Returns list of dictionaries.
-    """
-    try:
-        # read top n high scores
-        top_n_list = (
-            Scores.query.order_by(Scores.score.desc()).limit(top_n).all()
-        )
-        # strucutre data
-        new = [
-            {"name": player.name, "score": player.score}
-            for player in top_n_list
-        ]
-        return new
-
-    except AttributeError as e:
-        raise AttributeError(
-            "Could not read top high score from database: " + str(e)
-        )
-
-
-def drop_table(table):
-    """
-        Function for dropping a table, or all.
-    """
-    # Calling 'drop_table' with None as parameter means dropping all tables.
-    db.drop_all(bind=table)
 
 
 def seed_labels(app, filepath):

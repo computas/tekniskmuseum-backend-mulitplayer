@@ -72,7 +72,7 @@ def handle_joinGame(json_data):
         models.update_mulitplayer(player_id, game_id)
         models.insert_into_players(player_id, game_id, "Ready")
         join_room(game_id)
-        data = {"PLAYER ID": player_id, "GAME ID": game_id}
+        data = {"player_id": player_id, "game_id": game_id}
         send(json.dumps(data), sid=game_id)
 
     else:
@@ -81,44 +81,46 @@ def handle_joinGame(json_data):
         today = datetime.datetime.today()
         models.insert_into_games(game_id, json.dumps(labels), today)
         models.insert_into_players(player_id, game_id, "Waiting")
-        models.insert_into_mulitplayer(player_id, None, game_id)
+        models.insert_into_mulitplayer(game_id, player_id, None)
         join_room(game_id)
-        data = {"PLAYER ID": player_id, "GAME ID": game_id}
+        data = {"player_id": player_id, "game_id": game_id}
         send(json.dumps(data), sid=game_id)
 
 
-'''
 @socketio.on("newRound")
 def handle_newRound(json_data):
     # TODO: implement me!
-    player_id=request.sid
+    player_id = request.sid
     data = json.loads(json_data)
-    #this function does not exist?
-    models.update_player_in_game(player_id, data.game_id, "Ready")
-    game_state=models.get_game().state
-    if game_state=="Ready":
-        emit(get_label(), room=room)
+    game_id = data["game_id"]
+    models.update_game_for_player(game_id, player_id, 0, "ReadyToDraw")
+    opponent = models.get_opponent(game_id, player_id)
+    if opponent.state == "ReadyToDraw":
+        data = get_label(game_id)
+        models.update_game_for_player(game_id, player_id, 1, "Waiting")
+        models.update_game_for_player(
+            game_id, opponent.player_id, 0, "Waiting"
+        )
+        send(data, room=game_id)
     else:
-        emit("Player" + player_id + "is done", room=room)
+        send("Player" + player_id + "is done", room=game_id)
 
-def get_label():
+
+def get_label(game_id):
     """
         Provides the client with a new word.
     """
-    token = request.values["token"]
-    player = models.get_game(token)
-    game = models.get_record_from_game(player.game_id)
+    game = models.get_record_from_game(game_id)
 
     # Check if game complete
     if game.session_num > NUM_GAMES:
-        raise excp.BadRequest("Number of games exceeded")
+        send("Number of games exceeded")
 
     labels = json.loads(game.labels)
     label = labels[game.session_num - 1]
     norwegian_label = models.to_norwegian(label)
     data = {"label": norwegian_label}
-    return json.dumps(data), 200
-'''
+    return json.dumps(data)
 
 
 @socketio.on("classify")
