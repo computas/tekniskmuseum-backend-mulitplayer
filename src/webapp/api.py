@@ -8,6 +8,7 @@ import json
 import uuid
 import datetime
 from io import BytesIO
+from PIL import Image
 from base64 import decodestring, decodebytes
 from webapp import models
 from flask import Flask
@@ -149,17 +150,12 @@ def allowed_file(image):
     """
         Check if image satisfies the constraints of Custom Vision.
     """
-    if image.filename == "":
-        raise excp.BadRequest("No image submitted")
-
-    # Check that the file is a png
-    is_png = image.content_type == "image/png"
     # Ensure the file isn't too large
     too_large = len(image.read()) > 4000000
     # Ensure the file has correct resolution
     image.seek(0)
-    height, width = Image.open(BytesIO(image.stream.read())).size
+    height, width = Image.open(image).size
     image.seek(0)
     correct_res = (height >= 256) and (width >= 256)
-    if not is_png or too_large or not correct_res:
+    if too_large or not correct_res:
         raise excp.UnsupportedMediaType("Wrong image format")
