@@ -8,6 +8,7 @@ import json
 import uuid
 import datetime
 from webapp import models
+from utilities import setup
 from flask import Flask
 from flask import request
 from customvision.classifier import Classifier
@@ -32,8 +33,6 @@ models.create_tables(app)
 models.seed_labels(app, "./dict_eng_to_nor.csv")
 classifier = Classifier()
 
-NUM_GAMES = 3  # This is placed here temporarily(?)
-
 
 @socketio.on("connect")
 def connect():
@@ -42,6 +41,7 @@ def connect():
 
 @socketio.on("disconnect")
 def disconnect():
+
     print("=== client disconnected ===")
 
 
@@ -81,7 +81,7 @@ def handle_joinGame(json_data):
 
     else:
         game_id = uuid.uuid4().hex
-        labels = models.get_n_labels(NUM_GAMES)
+        labels = models.get_n_labels(setup.NUM_GAMES)
         today = datetime.datetime.today()
         models.insert_into_games(game_id, json.dumps(labels), today)
         models.insert_into_players(player_id, game_id, "Waiting")
@@ -130,7 +130,7 @@ def get_label(game_id):
     game = models.get_game(game_id)
 
     # Check if game complete
-    if game.session_num > NUM_GAMES:
+    if game.session_num > setup.NUM_GAMES:
         send("Number of games exceeded")
 
     labels = json.loads(game.labels)
