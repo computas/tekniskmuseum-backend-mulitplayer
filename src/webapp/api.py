@@ -130,5 +130,19 @@ def handle_classify(json_data):
 
 @socketio.on("endGame")
 def handle_endGame(json_data):
-    # TODO: implement me!
+    """
+        Event which ends the final game of the two players. The players provide
+        their scores and the player with the highest score is deemed the winner.
+        The two scores are finally stored in the database.
+    """
     data = json.loads(json_data)
+    print(data)
+    game_id = data["game_id"]
+    score = data["score"]
+    player_id = data["player_id"]
+    join_room(game_id)
+    return_data = {
+        "SCORE": score,
+        "PLAYER": player_id
+    }
+    emit(json.dumps(data), sid=game_id)
