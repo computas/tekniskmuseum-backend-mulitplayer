@@ -13,6 +13,7 @@ from base64 import decodestring, decodebytes
 from PIL import Image
 from io import BytesIO
 from webapp import models
+from utilities.exceptions import UserError
 import logging
 import os
 import json
@@ -161,7 +162,7 @@ def error_handler(error):
         error message is returned to the client. Else the error is
         logged.
     """
-    if isinstance(error, Exception):
+    if isinstance(error, UserError):
         emit("error", str(error))
     else:
         app.logger.error(error)
