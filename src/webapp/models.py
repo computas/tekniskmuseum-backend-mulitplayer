@@ -31,6 +31,9 @@ class Games(db.Model):
     labels = db.Column(db.String(64))
     date = db.Column(db.DateTime)
 
+    players = db.relationship("Players", uselist=False, back_populates="game")
+    mulitplay = db.relationship("MulitPlayer", uselist=False, back_populates="game")
+
 
 class Scores(db.Model):
     """
@@ -49,17 +52,21 @@ class Players(db.Model):
         foreign key to the game table.
     """
     player_id = db.Column(db.NVARCHAR(32), primary_key=True)
-    game_id = db.Column(db.NVARCHAR(32), primary_key=True, nullable=False)
+    game_id = db.Column(db.NVARCHAR(32), db.ForeignKey("games.game_id"), primary_key=True, nullable=False)
     state = db.Column(db.String(32), nullable=False)
+
+    game = db.relationship("Games", back_populates="players")
 
 
 class MulitPlayer(db.Model):
     """
         Table for storing players who partisipate in the same game.
     """
-    game_id = db.Column(db.NVARCHAR(32), primary_key=True)
+    game_id = db.Column(db.NVARCHAR(32), db.ForeignKey("games.game_id"), primary_key=True)
     player_1 = db.Column(db.NVARCHAR(32))
     player_2 = db.Column(db.NVARCHAR(32))
+
+    game = db.relationship("Games", back_populates="mulitplay")
 
 
 class Labels(db.Model):
@@ -239,8 +246,7 @@ def get_opponent(game_id, player_id):
     """
         Return the player in game record with the corresponding gameID.
     """
-    mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-
+    mp = MulitPlayer.query.get(game_id)
     if mp is None:
         # Needs to be changed to socket error
         raise excp.BadRequest("Token invalid or expired")
@@ -270,9 +276,9 @@ def update_mulitplayer(player2_id, game_id):
         Update mulitplayer with player 2's id.
     """
     try:
-        mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-        player_1 = Players.query.filter_by(player_id=mp.player_1).first()
-        player_1.game_state = "Ready"
+        mp = MulitPlayer.query.get(game_id)
+        player_1 = Players.query.get([mp.player_1, game_id])
+        player_1.state = "Ready"
         mp.player_2 = player2_id
         db.session.commit()
         return True
