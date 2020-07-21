@@ -78,7 +78,7 @@ def handle_joinGame(json_data):
         today = datetime.datetime.today()
         models.insert_into_games(game_id, json.dumps(labels), today)
         models.insert_into_players(player_id, game_id, "Waiting")
-        models.insert_into_mulitplayer(player_id, None, game_id)
+        models.insert_into_mulitplayer(game_id, player_id, None)
         join_room(game_id)
         data = {
             "player_id": player_id,
@@ -89,7 +89,6 @@ def handle_joinGame(json_data):
 
 @socketio.on("newRound")
 def handle_newRound(json_data):
-    # TODO: implement me!
     player_id = request.sid
     data = json.loads(json_data)
     game_id = data["game_id"]

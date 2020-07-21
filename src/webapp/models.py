@@ -172,7 +172,7 @@ def insert_into_players(player_id, game_id, state):
         )
 
 
-def insert_into_mulitplayer(player_1_id, player_2_id, game_id):
+def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
     """
         Docstring.
     """
@@ -185,7 +185,7 @@ def insert_into_mulitplayer(player_1_id, player_2_id, game_id):
     ):
         try:
             mulitplayer = MulitPlayer(
-                player_1=player_1_id, player_2=player_1_id, game_id=game_id
+                player_1=player_1_id, player_2=player_2_id, game_id=game_id
             )
             db.session.add(mulitplayer)
             db.session.commit()
