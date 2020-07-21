@@ -7,6 +7,7 @@
 import json
 import uuid
 import datetime
+from io import BytesIO
 from base64 import decodestring, decodebytes
 from webapp import models
 from flask import Flask
@@ -123,7 +124,9 @@ def get_label():
 def handle_classify(json, image):
 
     # TODO: do classification here
-    response = classifier.predict_image(image)
+    image_stream = BytesIO(image)
+    response = classifier.predict_image(image_stream)
+    print(response)
     emit("prediction", response)
 
 

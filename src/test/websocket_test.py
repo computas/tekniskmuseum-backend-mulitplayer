@@ -1,5 +1,7 @@
 import pytest
 import json
+import tempfile
+import werkzeug
 from webapp.api import app, socketio
 
 
@@ -32,8 +34,20 @@ def test_classification_correct(client):
 
     # ws_client.emit("joinGame", {})
 
-    with open("harambe.png", "rb") as hh:
-        ws_client.emit("classify", json.dumps({}), hh)
+    path = "harambe.png"
+    with open(path, "rb") as hh:
+        data_stream = hh.read()
+
+        tmp = tempfile.SpooledTemporaryFile()
+        tmp.write(data_stream)
+        tmp.seek(0)
+        # Create file storage object containing the image
+        content_type = "image/png"
+        image = werkzeug.datastructures.FileStorage(
+            stream=tmp, filename=path, content_type=content_type
+        )
+
+        ws_client.emit("classify", {}, image)
 
     r = ws_client.get_received()
 

@@ -484,3 +484,28 @@ def to_norwegian(english_label):
         raise AttributeError(
             "Could not find translation in Labels table: " + str(e)
         )
+
+
+def get_iteration_name():
+    """
+        Returns the first and only iteration name that should be in the model
+    """
+
+    iteration = Iteration.query.filter_by().first()
+    assert iteration.iteration_name is not None
+    return iteration.iteration_name
+
+
+def update_iteration_name(new_name):
+    """
+        updates the one only iteration_name to new_name
+    """
+    iteration = Iteration.query.filter_by().first()
+    if iteration is None:
+        iteration = Iteration(iteration_name=new_name)
+        db.session.add(iteration)
+    else:
+        iteration.iteration_name = new_name
+
+    db.session.commit()
+    return new_name
