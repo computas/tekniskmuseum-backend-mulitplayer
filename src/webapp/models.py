@@ -176,7 +176,7 @@ def insert_into_players(player_id, game_id, state):
         )
 
 
-def insert_into_mulitplayer(player_1_id, player_2_id, game_id):
+def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
     """
         Docstring.
     """
