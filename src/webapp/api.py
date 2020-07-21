@@ -151,8 +151,14 @@ def allowed_file(image):
     too_large = len(image.read()) > 4000000
     # Ensure the file has correct resolution
     image.seek(0)
-    height, width = Image.open(image).size
-    image.seek(0)
+    pimg = Image.open(image)
+
+    is_png = pimg.format == "PNG"
+
+    height, width = pimg.size
     correct_res = (height >= 256) and (width >= 256)
-    if too_large or not correct_res:
+
+    image.seek(0)
+
+    if is_png or too_large or not correct_res:
         raise excp.UnsupportedMediaType("Wrong image format")
