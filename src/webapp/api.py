@@ -28,6 +28,7 @@ models.seed_labels(app, "./dict_eng_to_nor.csv")
 classifier = Classifier()
 
 NUM_GAMES = 3  # This is placed here temporarily(?)
+print("ok")
 
 
 @socketio.on("connect")
@@ -125,8 +126,8 @@ def handle_classify(json, image):
 
     # TODO: do classification here
     image_stream = BytesIO(image)
-    response = classifier.predict_image(image_stream)
-    print(response)
+    # response = classifier.predict_image(image_stream)
+    response = {}
     emit("prediction", response)
 
 
