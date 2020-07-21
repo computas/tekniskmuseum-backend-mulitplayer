@@ -69,7 +69,6 @@ def handle_joinGame(json_data):
             "GAME ID": game_id
         }
         send(json.dumps(data), sid=game_id)
-
     else:
         game_id = uuid.uuid4().hex
         labels = models.get_n_labels(NUM_GAMES)
@@ -135,14 +134,24 @@ def handle_endGame(json_data):
         their scores and the player with the highest score is deemed the winner.
         The two scores are finally stored in the database.
     """
+    date = today = datetime.datetime.today()
     data = json.loads(json_data)
-    print(data)
-    game_id = data["game_id"]
-    score = data["score"]
-    player_id = data["player_id"]
-    join_room(game_id)
+    # Get data from given player
+    game_id = data["gameId"]
+    score_player = data["score"]
+    player_id = data["playerId"]
+    name_player = data["name"]
+    # Insert score information into db
+    models.insert_into_scores(name_player, score_player, date)
+    # Create a list containing player data which is sent out to both players
     return_data = {
-        "SCORE": score,
-        "PLAYER": player_id
+        "score": score_player,
+        "playerId": player_id
     }
-    emit(json.dumps(data), sid=game_id)
+    emit(
+        "endGame",
+        json.dumps(return_data),
+        sid=game_id,
+        room=game_id,
+        broadcast=True
+    )
