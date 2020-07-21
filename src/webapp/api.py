@@ -90,7 +90,6 @@ def handle_joinGame(json_data):
 
 @socketio.on("newRound")
 def handle_newRound(json_data):
-    # TODO: implement me!
     player_id = request.sid
     data = json.loads(json_data)
     game_id = data["game_id"]
