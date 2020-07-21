@@ -47,6 +47,10 @@
         print("<b>connection lost: </b>" + error.message);
     });
 
+    socket.on('endGame', function(message) {
+        print("<b>Game ended: </b>" + message);
+    });
+
     function print(message) {
 	document.getElementById("out").innerHTML += "<br>" + message;
     }
