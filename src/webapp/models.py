@@ -31,6 +31,8 @@ class Games(db.Model):
     labels = db.Column(db.String(64))
     date = db.Column(db.DateTime)
 
+    players = db.relationship("Players", uselist=False, back_populates="game")
+
 
 class Scores(db.Model):
     """
@@ -49,8 +51,10 @@ class Players(db.Model):
         foreign key to the game table.
     """
     player_id = db.Column(db.NVARCHAR(32), primary_key=True)
-    game_id = db.Column(db.NVARCHAR(32), primary_key=True, nullable=False)
+    game_id = db.Column(db.NVARCHAR(32), db.ForeignKey("games.game_id"), primary_key=True, nullable=False)
     state = db.Column(db.String(32), nullable=False)
+
+    game = db.relationship("Games", back_populates="players")
 
 
 class MulitPlayer(db.Model):
@@ -185,7 +189,7 @@ def insert_into_mulitplayer(player_1_id, player_2_id, game_id):
     ):
         try:
             mulitplayer = MulitPlayer(
-                player_1=player_1_id, player_2=player_1_id, game_id=game_id
+                player_1=player_1_id, player_2=player_2_id, game_id=game_id
             )
             db.session.add(mulitplayer)
             db.session.commit()
@@ -272,7 +276,7 @@ def update_mulitplayer(player2_id, game_id):
     try:
         mp = MulitPlayer.query.filter_by(game_id=game_id).first()
         player_1 = Players.query.filter_by(player_id=mp.player_1).first()
-        player_1.game_state = "Ready"
+        player_1.state = "Ready"
         mp.player_2 = player2_id
         db.session.commit()
         return True
