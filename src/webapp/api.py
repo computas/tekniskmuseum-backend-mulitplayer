@@ -10,12 +10,12 @@ import datetime
 from io import BytesIO
 from PIL import Image
 from base64 import decodestring, decodebytes
-from webapp import models
 from flask import Flask
 from flask import request
-from customvision.classifier import Classifier
 from flask_socketio import SocketIO, emit, send, join_room
+from werkzeug import exceptions as excp
 
+from webapp import models
 from customvision.classifier import Classifier
 
 
@@ -48,9 +48,6 @@ def handle_message(message):
 @socketio.on("filetest")
 def handle_filetest(json_data, image):
     print(json_data)
-    img = decodestring(image)
-
-    print(decodestring(image))
     with open("harambe.png", "wb") as f:
         f.write(image)
 
@@ -128,9 +125,6 @@ def handle_classify(data, image):
     allowed_file(image_stream)
 
     prob_kv, best_guess = classifier.predict_image(image_stream)
-
-    player_id = request.sid
-    time_left = float(data["time"])
 
     response = {"cerainty": prob_kv, "guess": best_guess, "hasWon": False}
     emit("prediction", response)
