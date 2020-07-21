@@ -1,9 +1,10 @@
 <!doctype html>
 
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <title>Socket.IO playground</title>
+    <meta charset="utf-8">
+    <title>Socket.IO playground</title>
 </head>
 
 <body>
@@ -14,12 +15,14 @@
     <label for="uriIn">URI:</label>
     <input type="text" id="uriIn" value="ws://localhost:5000">
     <button onclick="connectToHost()">Connect</button>
+</div>
+
 <div>
   <h3>Output:</h3>
   <p id="out"></p>
 </div>
 
-<form id="eventData">
+<div id="eventData">
     <label for="event">Event:</label>
     <input type="text" id="event">
 
@@ -30,10 +33,11 @@
     <input type="file" id="image">
 
     <button onclick="emitEvent()">Send</button>
-</form>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
 <script type="text/javascript" charset="utf-8">
+
     var socket = null;
     connectToHost();
 
@@ -48,35 +52,53 @@
     }
 
     // Event handlers
-    socket.on('connect', function() {
-        socket.emit('my event', {data: 'I\'m connected!'});
-	console.log(socket);
-	print("<b>connected to: </b>" + socket.io.uri);
+    socket.on('connect', function () {
+        socket.emit('my event', { data: 'I\'m connected!' });
+        print("<b>connected to host: </b>" + socket.io.uri);
     });
-
+    
     socket.on('message', function(message) {
         var output = document.createTextNode("message received: " + message);
-	print("<b>message received</b>: " + message);
+    	print("<b>message received</b>: " + message);
     });
 
-    socket.on('connect_error', function(error) {
+    socket.on('connect_error', function (error) {
         print("<b>connection lost: </b>" + error.message);
     });
-
+    
+    
+    socket.on('player_info', (json_data) => {
+        print(json_data);
+    });
+    
+    
+    socket.on('state_info', (json_data) => {
+        print(json_data);
+    });
+    
+    
+    socket.on('get_label', (json_data) => {
+        print(json_data);
+    })
+    
     function print(message) {
-	document.getElementById("out").innerHTML += "<br>" + message;
+	    document.getElementById("out").innerHTML += "<br>" + message;
     }
 
     function emitEvent() {
         var input = document.getElementById("in").value;
         var eventName = document.getElementById("event").value;
-        var image = document.getElementById("image").files[0];
-        var fd = new FormData();
-        fd.append("image", image);
-        socket.emit(eventName, input, fd);
-	print("<b>message sent: </b>" + input);
+        var files = document.getElementById("image").files
+        if (files.len < 1) {
+            socket.emit(eventName, input);
+        } else {
+            socket.emit(eventName, input, files[0]);
+        }
+	    print("<b>message sent: </b>" + input);
     }
+    
 </script>
 
 </body>
+
 </html>
