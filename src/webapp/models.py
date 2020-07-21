@@ -32,6 +32,7 @@ class Games(db.Model):
     date = db.Column(db.DateTime)
 
     players = db.relationship("Players", uselist=False, back_populates="game")
+    mulitplay = db.relationship("MulitPlayer", uselist=False, back_populates="game")
 
 
 class Scores(db.Model):
@@ -61,9 +62,11 @@ class MulitPlayer(db.Model):
     """
         Table for storing players who partisipate in the same game.
     """
-    game_id = db.Column(db.NVARCHAR(32), primary_key=True)
+    game_id = db.Column(db.NVARCHAR(32), db.ForeignKey("games.game_id"), primary_key=True)
     player_1 = db.Column(db.NVARCHAR(32))
     player_2 = db.Column(db.NVARCHAR(32))
+
+    game = db.relationship("Games", back_populates="mulitplay")
 
 
 class Labels(db.Model):
@@ -244,7 +247,6 @@ def get_opponent(game_id, player_id):
         Return the player in game record with the corresponding gameID.
     """
     mp = MulitPlayer.query.get(game_id)
-
     if mp is None:
         # Needs to be changed to socket error
         raise excp.BadRequest("Token invalid or expired")

@@ -101,14 +101,14 @@ def handle_newRound(json_data):
         models.update_game_for_player(game_id, opponent.player_id, 0, "Waiting")
         send(data, room=game_id)
     else:
-        send("Player" + player_id + "is done", room=game_id)
+        send("Player " + player_id + " is waiting", room=game_id)
 
 
 def get_label(game_id):
     """
         Provides the client with a new word.
     """
-    game = models.get_record_from_game(game_id)
+    game = models.get_game(game_id)
 
     # Check if game complete
     if game.session_num > NUM_GAMES:
