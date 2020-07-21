@@ -274,8 +274,8 @@ def update_mulitplayer(player2_id, game_id):
         Update mulitplayer with player 2's id.
     """
     try:
-        mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-        player_1 = Players.query.filter_by(player_id=mp.player_1).first()
+        mp = MulitPlayer.query.get(game_id)
+        player_1 = Players.query.get([mp.player_1, game_id])
         player_1.state = "Ready"
         mp.player_2 = player2_id
         db.session.commit()
