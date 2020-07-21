@@ -38,14 +38,31 @@
 	    print("<b>connected to host: </b>" + socket.io.uri);
     });
 
+
     socket.on('message', function(message) {
         var output = document.createTextNode("message received: " + message);
 	    print("<b>message received</b>: " + message);
     });
 
+
     socket.on('connect_error', function(error) {
         print("<b>connection lost: </b>" + error.message);
     });
+
+
+    socket.on('player_info', (json_data) => {
+	    print(json_data);
+    });
+
+
+    socket.on('state_info', (json_data) => {
+	    print(json_data);
+    });
+
+
+   socket.on('get_label', (json_data)=> {
+       print(json_data);
+   })
 
     function print(message) {
 	document.getElementById("out").innerHTML += "<br>" + message;
@@ -58,6 +75,7 @@
 	    print("<b>message sent: </b>" + input);
         document.getElementById("in").value = "";
     }
+
 </script>
 
 </body>
