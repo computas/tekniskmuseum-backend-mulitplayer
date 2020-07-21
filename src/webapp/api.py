@@ -75,7 +75,10 @@ def handle_joinGame(json_data):
             "Ready": True
         }
         emit(json.dumps(data), sid=player_id)
+        #send(json.dumps(data), sid=player_id)
         emit(json.dumps(state), room=game_id)
+        #send(json.dumps(state), room=game_id)
+        print(data)
 
     else:
         game_id = uuid.uuid4().hex
@@ -83,7 +86,7 @@ def handle_joinGame(json_data):
         today = datetime.datetime.today()
         models.insert_into_games(game_id, json.dumps(labels), today)
         models.insert_into_players(player_id, game_id, "Waiting")
-        models.insert_into_mulitplayer(player_id, None, game_id)
+        models.insert_into_mulitplayer(game_id, player_id, None)
         join_room(game_id)
         data = {
             "player_id": player_id,
@@ -93,7 +96,10 @@ def handle_joinGame(json_data):
             "Ready": False
         }
         emit(json.dumps(data), sid=player_id)
+        #send(json.dumps(data), sid=player_id)
         emit(json.dumps(state), room=game_id)
+        #send(json.dumps(state), room=game_id)
+        print(data)
 
 
 
@@ -110,6 +116,7 @@ def handle_newRound(json_data):
         models.update_game_for_player(game_id, player_id, 1, "Waiting")
         models.update_game_for_player(game_id, opponent.player_id, 0, "Waiting")
         emit(data, room=game_id)
+        #send(data, room=game_id)
     else:
         emit("Player " + player_id + " is waiting to begin", room=game_id)
 
@@ -118,7 +125,7 @@ def get_label(game_id):
     """
         Provides the client with a new word.
     """
-    game = models.get_record_from_game(game_id)
+    game = models.get_game(game_id)
 
     # Check if game complete
     if game.session_num > NUM_GAMES:
