@@ -80,16 +80,10 @@ def handle_joinGame(json_data):
         models.insert_into_mulitplayer(game_id, player_id, None)
         player = "player_1"
         is_ready = False
-    
+
     join_room(game_id)
-    data = {
-        "player": player,
-        "player_id": player_id,
-        "game_id": game_id
-    }
-    state = {
-        "ready": is_ready
-    }
+    data = {"player": player, "player_id": player_id, "game_id": game_id}
+    state = {"ready": is_ready}
     emit("player_info", json.dumps(data), sid=player_id)
     emit("state_info", json.dumps(state), room=game_id)
 
@@ -104,25 +98,16 @@ def handle_newRound(json_data):
     opponent = models.get_opponent(game_id, player_id)
     if opponent.state == "ReadyToDraw":
         data = get_label(game_id)
-        state = {
-            "ready": True
-        }
+        state = {"ready": True}
         models.update_game_for_player(game_id, player_id, 1, "Waiting")
-<<<<<<< HEAD
         models.update_game_for_player(
             game_id, opponent.player_id, 0, "Waiting"
         )
-        send(data, room=game_id)
-=======
-        models.update_game_for_player(game_id, opponent.player_id, 0, "Waiting")
         emit("get_label", data, room=game_id)
         emit("state_info", json.dumps(state), room=game_id)
-        #send(data, room=game_id)
->>>>>>> 2d002a79463ffe0f820e1d0bda2f4b4aae586596
+        # send(data, room=game_id)
     else:
-        state = {
-            "ready": False
-        }
+        state = {"ready": False}
         emit("state_info", json.dumps(state), room=game_id)
 
 
