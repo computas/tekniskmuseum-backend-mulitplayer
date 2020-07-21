@@ -4,9 +4,11 @@
     root has been established, since it makes it easy to check if the
     application is live.
 """
+import os
 import json
 import uuid
 import datetime
+import logging
 from webapp import models
 from flask import Flask
 from flask import request
@@ -21,22 +23,25 @@ from flask_socketio import (
 
 # Initialize app
 app = Flask(__name__)
+logger = False
+if IS_PRODUCTION in os.environ:
+    logger = True
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    engineio_logger=False,
+    logger=logger,
 )
 app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 models.create_tables(app)
 models.seed_labels(app, "./dict_eng_to_nor.csv")
 classifier = Classifier()
-
 NUM_GAMES = 3  # This is placed here temporarily(?)
 
 
 @socketio.on("connect")
 def connect():
+    app.logger.info("We're up!)
     print("===== client connected =====")
 
 
@@ -48,6 +53,7 @@ def disconnect():
 @socketio.on("message")
 def handle_message(message):
     print("client: " + str(message))
+    print(dette_finnes_ikke)
 
 
 @socketio.on("joinGame")
@@ -87,44 +93,14 @@ def handle_joinGame(json_data):
         send(json.dumps(data), sid=game_id)
 
 
-'''
-@socketio.on("newRound")
-def handle_newRound(json_data):
-    # TODO: implement me!
-    player_id=request.sid
-    data = json.loads(json_data)
-    #this function does not exist?
-    models.update_player_in_game(player_id, data.game_id, "Ready")
-    game_state=models.get_game().state
-    if game_state=="Ready":
-        emit(get_label(), room=room)
-    else:
-        emit("Player" + player_id + "is done", room=room)
-
-def get_label():
-    """
-        Provides the client with a new word.
-    """
-    token = request.values["token"]
-    player = models.get_game(token)
-    game = models.get_record_from_game(player.game_id)
-
-    # Check if game complete
-    if game.session_num > NUM_GAMES:
-        raise excp.BadRequest("Number of games exceeded")
-
-    labels = json.loads(game.labels)
-    label = labels[game.session_num - 1]
-    norwegian_label = models.to_norwegian(label)
-    data = {"label": norwegian_label}
-    return json.dumps(data), 200
-'''
-
-
 @socketio.on("classify")
 def handle_classify(json_data):
     # data = json.loads(json_data)
     # TODO: do classification here
+    try:
+        print(dette_finnes_ikke)
+    except Exception as e:
+        raise Exception("could not classify ")
     response = {
         "foo": "bar"
     }
@@ -136,3 +112,16 @@ def handle_endGame(json_data):
     # TODO: implement me!
     data = json.loads(json_data)
     emit("endGame", data)
+
+
+@socketio.on_error()
+def error_handler(error):
+    """
+        Captures all exceptions raised. If the Exception is a user error the
+        error message and code is returned to the client. Else the error is
+        logged.
+    """
+    if isinstance(error, Exception):
+        emit("error", str(error))
+    else:
+        app.logger.error(error)
