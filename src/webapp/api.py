@@ -9,24 +9,21 @@ import uuid
 import datetime
 from webapp import models
 from utilities import setup
+from io import BytesIO
+from PIL import Image
+from base64 import decodestring, decodebytes
 from flask import Flask
 from flask import request
+from flask_socketio import SocketIO, emit, send, join_room
+from werkzeug import exceptions as excp
+
+from webapp import models
 from customvision.classifier import Classifier
-from flask_socketio import (
-    SocketIO,
-    emit,
-    send,
-    join_room
-)
 
 
 # Initialize app
 app = Flask(__name__)
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    engineio_logger=False,
-)
+socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=False,)
 app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 models.create_tables(app)
@@ -58,6 +55,13 @@ def handle_message(message):
     print("client: " + str(message))
 
 
+@socketio.on("filetest")
+def handle_filetest(json_data, image):
+    print(json_data)
+    with open("harambe.png", "wb") as f:
+        f.write(image)
+
+
 @socketio.on("joinGame")
 def handle_joinGame(json_data):
     """
@@ -74,18 +78,8 @@ def handle_joinGame(json_data):
         # change state of palyer_1 in PIG to "Ready"
         models.update_mulitplayer(player_id, game_id)
         models.insert_into_players(player_id, game_id, "Ready")
-        join_room(game_id)
-
-        data = {
-            "player": "player_2",
-            "player_id": player_id,
-            "game_id": game_id,
-        }
-        state = {
-            "ready": True
-        }
-        emit("player_info", json.dumps(data), sid=player_id)
-        emit("state_info", json.dumps(state), room=game_id)
+        player = "player_2"
+        is_ready = True
 
     else:
         game_id = uuid.uuid4().hex
@@ -94,18 +88,14 @@ def handle_joinGame(json_data):
         models.insert_into_games(game_id, json.dumps(labels), today)
         models.insert_into_players(player_id, game_id, "Waiting")
         models.insert_into_mulitplayer(game_id, player_id, None)
-        join_room(game_id)
+        player = "player_1"
+        is_ready = False
 
-        data = {
-            "player": "player_1",
-            "player_id": player_id,
-            "game_id": game_id
-        }
-        state = {
-            "ready": False
-        }
-        emit("player_info", json.dumps(data), sid=player_id)
-        emit("state_info", json.dumps(state), room=game_id)
+    join_room(game_id)
+    data = {"player": player, "player_id": player_id, "game_id": game_id}
+    state = {"ready": is_ready}
+    emit("player_info", json.dumps(data), sid=player_id)
+    emit("state_info", json.dumps(state), room=game_id)
 
 
 @socketio.on("newRound")
@@ -125,9 +115,7 @@ def handle_newRound(json_data):
         emit("get_label", data, room=game_id)
         emit("state_info", json.dumps(state), room=game_id)
     else:
-        state = {
-            "ready": False
-        }
+        state = {"ready": False}
         emit("state_info", json.dumps(state), room=game_id)
 
 
@@ -144,15 +132,21 @@ def get_label(game_id):
     labels = json.loads(game.labels)
     label = labels[game.session_num - 1]
     norwegian_label = models.to_norwegian(label)
-    data = {
-        "label": norwegian_label
-    }
+    data = {"label": norwegian_label}
     return json.dumps(data)
 
 
 @socketio.on("classify")
-def handle_classify(json_data):
-    pass
+def handle_classify(data, image):
+
+    # TODO: do classification here
+    image_stream = BytesIO(image)
+    allowed_file(image_stream)
+
+    prob_kv, best_guess = classifier.predict_image(image_stream)
+
+    response = {"cerainty": prob_kv, "guess": best_guess, "hasWon": False}
+    emit("prediction", response)
 
 
 @socketio.on("endGame")
@@ -160,3 +154,24 @@ def handle_endGame(json_data):
     # TODO: implement me!
     data = json.loads(json_data)
     emit("endGame", data)
+
+
+def allowed_file(image):
+    """
+        Check if image satisfies the constraints of Custom Vision.
+    """
+    # Ensure the file isn't too large
+    too_large = len(image.read()) > 4000000
+    # Ensure the file has correct resolution
+    image.seek(0)
+    pimg = Image.open(image)
+
+    is_png = pimg.format == "PNG"
+
+    height, width = pimg.size
+    correct_res = (height >= 256) and (width >= 256)
+
+    image.seek(0)
+
+    if is_png or too_large or not correct_res:
+        raise excp.UnsupportedMediaType("Wrong image format")
