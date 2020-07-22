@@ -90,6 +90,8 @@ def handle_joinGame(json_data):
           the game.
     """
     player_id = request.sid
+    # Players join their own room as well
+    join_room(player_id)
     game_id = models.check_player2_in_mulitplayer(player_id)
 
     if game_id is not None:
@@ -120,8 +122,8 @@ def handle_joinGame(json_data):
 @socketio.on("newRound")
 def handle_newRound(json_data):
     player_id = request.sid
-    data = json.loads(json_data)
-    game_id = data["game_id"]
+    jd = json.loads(json_data)
+    game_id = jd["game_id"]
     models.update_game_for_player(game_id, player_id, 0, "ReadyToDraw")
     opponent = models.get_opponent(game_id, player_id)
     if opponent.state == "ReadyToDraw":
@@ -169,9 +171,28 @@ def handle_classify(data, image):
 
 @socketio.on("endGame")
 def handle_endGame(json_data):
-    # TODO: implement me!
+    """
+        Event which ends the final game of the two players. The players provide
+        their scores and the player with the highest score is deemed the winner.
+        The two scores are finally stored in the database.
+    """
+    date = datetime.datetime.today()
     data = json.loads(json_data)
-    emit("endGame", data)
+    # Get data from given player
+    game_id = data["game_id"]
+    score_player = data["score"]
+    player_id = data["player_id"]
+    name_player = data["name"]
+    # Insert score information into db
+    models.insert_into_scores(name_player, score_player, date)
+    # Create a list containing player data which is sent out to both players
+    return_data = {
+        "score": score_player,
+        "playerId": player_id
+    }
+    # Retrieve the opponent (client) to pass on the score to
+    opponent = models.get_opponent(game_id, player_id)
+    emit("endGame", json.dumps(return_data), room=opponent.player_id)
 
 
 @socketio.on_error()
