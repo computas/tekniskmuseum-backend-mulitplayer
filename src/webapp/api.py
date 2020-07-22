@@ -89,7 +89,7 @@ def handle_joinGame(json_data):
         # change state of palyer_1 in PIG to "Ready"
         models.update_mulitplayer(player_id, game_id)
         models.insert_into_players(player_id, game_id, "Ready")
-        player = "player_2"
+        player_nr = "player_2"
         is_ready = True
 
     else:
@@ -99,17 +99,17 @@ def handle_joinGame(json_data):
         models.insert_into_games(game_id, json.dumps(labels), today)
         models.insert_into_players(player_id, game_id, "Waiting")
         models.insert_into_mulitplayer(game_id, player_id, None)
-        player = "player_1"
+        player_nr = "player_1"
         is_ready = False
 
     data = {
-        "player": player,
+        "player_nr": player_nr,
         "player_id": player_id,
         "game_id": game_id
     }
     state_data = {"ready": is_ready}
     join_room(game_id)
-    # Emit message with player-state to each player triggering the event
+        # Emit message with player-state to each player triggering the event
     emit("joinGame", json.dumps(data), sid=player_id)
     # Emit message with game-state to both players each time a player
     # triggers the event
