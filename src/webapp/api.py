@@ -146,7 +146,8 @@ def translate_probabilities(labels):
 def handle_classify(data, image):
     """
         WS event for accepting images for classification
-        params: data: {"game_id": str: the game_id you get from joinGame, "time_left": float: the time left until the game is over}
+        params: data: {"game_id": str: the game_id you get from joinGame, 
+                       "time_left": float: the time left until the game is over}
                image: binary string with the image data 
     """
     image_stream = BytesIO(image)
