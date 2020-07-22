@@ -59,6 +59,8 @@ def handle_joinGame(json_data):
           the game.
     """
     player_id = request.sid
+    # Players join their own room as well
+    join_room(player_id)
     game_id = models.check_player2_in_mulitplayer(player_id)
     if game_id is not None:
         # Update mulitplayer table by inserting player_id for player_2 and
@@ -142,9 +144,9 @@ def handle_endGame(json_data):
     date = datetime.datetime.today()
     data = json.loads(json_data)
     # Get data from given player
-    game_id = data["gameId"]
+    game_id = data["game_id"]
     score_player = data["score"]
-    player_id = data["playerId"]
+    player_id = data["player_id"]
     name_player = data["name"]
     # Insert score information into db
     models.insert_into_scores(name_player, score_player, date)
@@ -155,4 +157,5 @@ def handle_endGame(json_data):
     }
     # Retrieve the opponent (client) to pass on the score to
     opponent = models.get_opponent(game_id, player_id)
-    emit("endGame", json.dumps(return_data), sid=opponent.player_id)
+    emit("endGame", json.dumps(return_data), room=opponent.player_id)
+    print(opponent.player_id)
