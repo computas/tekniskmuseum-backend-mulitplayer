@@ -60,7 +60,6 @@ def disconnect():
     }
     emit("player_disconnected", json.dumps(data), room=game.game_id)
     models.delete_session_from_game(game.game_id)
-    models.delete_old_games()
     print("=== client disconnected ===")
 
 
@@ -185,6 +184,7 @@ def handle_endGame(json_data):
     # Retrieve the opponent (client) to pass on the score to
     opponent = models.get_opponent(game_id, player_id)
     emit("endGame", json.dumps(return_data), room=opponent.player_id)
+    models.delete_old_games()
 
 
 @socketio.on_error()
