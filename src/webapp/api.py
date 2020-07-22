@@ -4,24 +4,33 @@
     root has been established, since it makes it easy to check if the
     application is live.
 """
+from customvision.classifier import Classifier
+from werkzeug import exceptions as excp
+from flask_socketio import SocketIO, emit, send, join_room
+from flask import request
+from flask import Flask
+from base64 import decodestring, decodebytes
+from PIL import Image
+from io import BytesIO
+from webapp import models
+from utilities.exceptions import UserError
+import logging
+import os
 import json
 import uuid
 import datetime
-from io import BytesIO
-from PIL import Image
-from base64 import decodestring, decodebytes
-from flask import Flask
-from flask import request
-from flask_socketio import SocketIO, emit, send, join_room
-from werkzeug import exceptions as excp
-
-from webapp import models
-from customvision.classifier import Classifier
-
 
 # Initialize app
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=False,)
+logger = False
+if "IS_PRODUCTION" in os.environ:
+    logger = True
+
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    logger=logger,
+)
 app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 models.create_tables(app)
@@ -130,7 +139,6 @@ def get_label(game_id):
 @socketio.on("classify")
 def handle_classify(data, image):
 
-    # TODO: do classification here
     image_stream = BytesIO(image)
     allowed_file(image_stream)
 
@@ -145,6 +153,19 @@ def handle_endGame(json_data):
     # TODO: implement me!
     data = json.loads(json_data)
     emit("endGame", data)
+
+
+@socketio.on_error()
+def error_handler(error):
+    """
+        Captures all Exeptions raised. If error is an Exception, the
+        error message is returned to the client. Else the error is
+        logged.
+    """
+    if isinstance(error, UserError):
+        emit("error", str(error))
+    else:
+        app.logger.error(error)
 
 
 def allowed_file(image):
