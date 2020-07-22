@@ -14,11 +14,13 @@ from PIL import Image
 from io import BytesIO
 from webapp import models
 from utilities.exceptions import UserError
+from utilities import setup
 import logging
 import os
 import json
 import uuid
 import datetime
+
 
 # Initialize app
 app = Flask(__name__)
@@ -36,7 +38,6 @@ models.db.init_app(app)
 models.create_tables(app)
 models.seed_labels(app, "./dict_eng_to_nor.csv")
 classifier = Classifier()
-NUM_GAMES = 3  # This is placed here temporarily(?)
 
 
 @socketio.on("connect")
@@ -46,6 +47,24 @@ def connect():
 
 @socketio.on("disconnect")
 def disconnect():
+    """
+        When a player disconnects from a session this function tells the
+        other player in the room who left and deletes all records in the
+        database connected to the session. Old sessions is also deleted.
+    """
+    player_id = request.sid
+    player = models.get_player(player_id)
+    game = models.get_game(player.game_id)
+    if player_id == models.get_mulitplayer(player.game_id).player_1:
+        id = "1"
+    else:
+        id = "2"
+    data = {
+        "game_over": True,
+        "player_left": id
+    }
+    emit("game_over", json.dumps(data), room=game.game_id)
+    models.delete_session_from_game(game.game_id)
     print("=== client disconnected ===")
 
 
@@ -84,7 +103,7 @@ def handle_joinGame(json_data):
 
     else:
         game_id = uuid.uuid4().hex
-        labels = models.get_n_labels(NUM_GAMES)
+        labels = models.get_n_labels(setup.NUM_GAMES)
         today = datetime.datetime.today()
         models.insert_into_games(game_id, json.dumps(labels), today)
         models.insert_into_players(player_id, game_id, "Waiting")
@@ -108,14 +127,13 @@ def handle_newRound(json_data):
     opponent = models.get_opponent(game_id, player_id)
     if opponent.state == "ReadyToDraw":
         data = get_label(game_id)
-        state = {"ready": True}
-        models.update_game_for_player(game_id, player_id, 1, "Waiting")
-        models.update_game_for_player(
-            game_id, opponent.player_id, 0, "Waiting"
-        )
+        state = {
+            "ready": True
+        }
+        models.update_game_for_player(game_id, player_id, 0, "Drawing")
+        models.update_game_for_player(game_id, opponent.player_id, 0, "Drawing")
         emit("get_label", data, room=game_id)
         emit("state_info", json.dumps(state), room=game_id)
-        # send(data, room=game_id)
     else:
         state = {"ready": False}
         emit("state_info", json.dumps(state), room=game_id)
@@ -128,7 +146,7 @@ def get_label(game_id):
     game = models.get_game(game_id)
 
     # Check if game complete
-    if game.session_num > NUM_GAMES:
+    if game.session_num > setup.NUM_GAMES:
         send("Number of games exceeded")
 
     labels = json.loads(game.labels)

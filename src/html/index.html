@@ -57,6 +57,11 @@
         });
 
 
+        socket.on('game_over', (json_data)=> {
+            print(json_data);
+        });
+
+
         socket.on('state_info', (json_data) => {
             print(json_data);
         });
