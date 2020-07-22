@@ -61,7 +61,6 @@ def disconnect():
 
 @socketio.on("message")
 def handle_message(message):
-    emit("message", "test")
     print("client: " + str(message))
 
 
