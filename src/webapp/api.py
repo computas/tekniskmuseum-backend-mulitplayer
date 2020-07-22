@@ -153,4 +153,6 @@ def handle_endGame(json_data):
         "score": score_player,
         "playerId": player_id
     }
-    emit("endGame", json.dumps(return_data), room=game_id)
+    # Retrieve the opponent (client) to pass on the score to
+    opponent = models.get_opponent(game_id, player_id)
+    emit("endGame", json.dumps(return_data), sid=opponent.player_id)
