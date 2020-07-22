@@ -164,16 +164,7 @@ def handle_classify(data, image):
     correct_label = labels[game.session_num]
 
     has_won = correct_label == best_guess and time_left > 0
-    time_out = time_left < 0
-
-    if has_won:
-        models.update_game_for_player(player_id, game_id, 0, "Done")
-        opponent = models.get_opponent(game_id, player_id)
-        opponent_done = opponent.state == "Done"
-
-        if opponent_done:
-            models.update_game_for_player(player_id, game_id, 1, "Done")
-            emit("round_over", room=game_id)
+    time_out = time_left <= 0
 
     response = {
         "certainty": translate_probabilities(prob_kv),
@@ -182,6 +173,25 @@ def handle_classify(data, image):
         "hasWon": has_won,
     }
     emit("prediction", response)
+
+    if time_out:
+        player = models.get_player(player_id)
+        opponent = models.get_opponent(player_id, game_id)
+        if player.state != "Done" or opponent.state != "Done":
+            models.update_game_for_player(player_id, game_id, 0, "Done")
+            models.update_game_for_player(
+                opponent.player_id, game_id, 1, "Done"
+            )
+            emit("round_over", room=game_id)
+
+    elif has_won:
+        models.update_game_for_player(player_id, game_id, 0, "Done")
+        opponent = models.get_opponent(game_id, player_id)
+        opponent_done = opponent.state == "Done"
+
+        if opponent_done:
+            models.update_game_for_player(player_id, game_id, 1, "Done")
+            emit("round_over", room=game_id)
 
 
 @socketio.on("endGame")
