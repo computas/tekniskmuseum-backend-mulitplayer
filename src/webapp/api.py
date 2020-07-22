@@ -125,8 +125,8 @@ def handle_getLabel(json_data):
     """
     data = json.loads(json_data)
     game_id = data["game_id"]
-    data = json.loads(get_label(game_id))
-    emit("getLabel", json.dumps(data), room=game_id)
+    label = json.loads(get_label(game_id))
+    emit("getLabel", json.dumps(label), room=game_id)
 
 
 def get_label(game_id):
