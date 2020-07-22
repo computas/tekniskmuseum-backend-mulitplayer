@@ -262,7 +262,8 @@ def get_opponent(game_id, player_id):
         raise excp.BadRequest("Token invalid or expired")
     elif mp.player_1 == player_id:
         return Players.query.get([mp.player_2, game_id])
-    return Players.query.get([mp.player_1, game_id])
+    elif mp.player_2 == player_id:
+        return Players.query.get([mp.player_1, game_id])
 
 
 def update_game_for_player(game_id, player_id, ses_num, state):

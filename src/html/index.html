@@ -66,8 +66,13 @@
             print(json_data);
         })
 
+
+        socket.on('endGame', function(message) {
+            print("<b>Game ended: </b>" + message);
+        });
+
         function print(message) {
-            document.getElementById("out").innerHTML += "<br>" + message;
+        document.getElementById("out").innerHTML += "<br>" + message;
         }
 
         function sendMessage() {
@@ -77,8 +82,7 @@
             print("<b>message sent: </b>" + input);
             document.getElementById("in").value = "";
         }
-
-    </script>
+</script>
 
 </body>
 
