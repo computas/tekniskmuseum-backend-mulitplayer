@@ -43,9 +43,10 @@ def test_classification_correct(client):
     ws_client.emit("joinGame", {})
 
     r = ws_client.get_received()
-    print(r[0]["args"][0])
+    print("joined game event", r[0]["args"][0])
     args = json.loads(r[0]["args"][0])
     game_id = args["game_id"]
+    print("game id: ", game_id)
     with open(HARAMBE_PATH, "rb") as hh:
         data_stream = hh.read()
 
@@ -64,7 +65,7 @@ def test_classification_correct(client):
 
     r = ws_client.get_received()
 
-    print(r)
+    print("prediction", r)
     assert r[0]["name"] == "prediction"
     assert type(r[0]["args"][0]["certainty"]) is dict
     assert type(r[0]["args"][0]["guess"]) is str
@@ -72,4 +73,5 @@ def test_classification_correct(client):
 
 
 def test_player_correct_state_after_classify(client):
+    """TODO: implement me"""
     pass
