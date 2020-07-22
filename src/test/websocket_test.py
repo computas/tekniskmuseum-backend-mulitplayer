@@ -24,7 +24,7 @@ def test_join_game_responds(client):
     r = ws_client.get_received()
 
     print(r)
-    assert r[0]["name"] == "message"
+    assert r[0]["name"] == "joinGame"
 
 
 def test_classification_correct(client):
