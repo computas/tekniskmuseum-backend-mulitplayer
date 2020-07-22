@@ -1,3 +1,4 @@
 cd src
 clear
-python -m webapp.app
+gunicorn --worker-class eventlet -w 1 webapp.api:app
+
