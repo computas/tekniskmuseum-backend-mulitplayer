@@ -1,4 +1,4 @@
 cd src
 clear
-gunicorn --worker-class eventlet -w 1 webapp.api:app
+gunicorn --bind=0.0.0.0 --worker-class eventlet -w 1 webapp.api:app
 
