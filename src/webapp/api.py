@@ -164,6 +164,7 @@ def handle_classify(data, image):
     correct_label = labels[game.session_num]
 
     has_won = correct_label == best_guess and time_left > 0
+    time_out = time_left < 0
 
     if has_won:
         models.update_game_for_player(player_id, game_id, 0, "Done")
