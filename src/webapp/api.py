@@ -28,11 +28,7 @@ logger = False
 if "IS_PRODUCTION" in os.environ:
     logger = True
 
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    logger=logger,
-)
+socketio = SocketIO(app, cors_allowed_origins="*", logger=logger,)
 app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 models.create_tables(app)
@@ -156,16 +152,67 @@ def get_label(game_id):
     return json.dumps(data)
 
 
+def translate_probabilities(labels):
+    """
+        translate the labels in a probability dictionary to norwegian
+    """
+    translation_dict = models.get_translation_dict()
+    return dict(
+        [(translation_dict[label], prob) for label, prob in labels.items()]
+    )
+
+
 @socketio.on("classify")
 def handle_classify(data, image):
-
+    """
+        WS event for accepting images for classification
+        params: data: {"game_id": str: the game_id you get from joinGame, 
+                       "time_left": float: the time left until the game is over}
+               image: binary string with the image data 
+    """
     image_stream = BytesIO(image)
     allowed_file(image_stream)
 
     prob_kv, best_guess = classifier.predict_image(image_stream)
 
-    response = {"cerainty": prob_kv, "guess": best_guess, "hasWon": False}
+    player_id = request.sid
+    game_id = data["game_id"]
+    time_left = data["time_left"]
+
+    game = models.get_game(game_id)
+
+    labels = json.loads(game.labels)
+    correct_label = labels[game.session_num]
+
+    has_won = correct_label == best_guess and time_left > 0
+    time_out = time_left <= 0
+
+    response = {
+        "certainty": translate_probabilities(prob_kv),
+        "guess": models.to_norwegian(best_guess),
+        "correctLabel": models.to_norwegian(correct_label),
+        "hasWon": has_won,
+    }
     emit("prediction", response)
+
+    if time_out:
+        player = models.get_player(player_id)
+        opponent = models.get_opponent(player_id, game_id)
+        if player.state != "Done" or opponent.state != "Done":
+            models.update_game_for_player(player_id, game_id, 0, "Done")
+            models.update_game_for_player(
+                opponent.player_id, game_id, 1, "Done"
+            )
+            emit("round_over", room=game_id)
+
+    elif has_won:
+        models.update_game_for_player(player_id, game_id, 0, "Done")
+        opponent = models.get_opponent(game_id, player_id)
+        opponent_done = opponent.state == "Done"
+
+        if opponent_done:
+            models.update_game_for_player(player_id, game_id, 1, "Done")
+            emit("round_over", room=game_id)
 
 
 @socketio.on("endGame")

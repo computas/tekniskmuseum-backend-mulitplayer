@@ -4,6 +4,8 @@ import tempfile
 import werkzeug
 from webapp.api import app, socketio
 
+HARAMBE_PATH = "../data/harambe.png"
+
 
 @pytest.fixture
 def client():
@@ -14,6 +16,9 @@ def client():
 
 
 def test_join_game_responds(client):
+    """
+        tests wether a player is able to join game
+    """
     flask_client, ws_client = client
 
     assert ws_client.is_connected()
@@ -23,19 +28,27 @@ def test_join_game_responds(client):
     ws_client.emit("joinGame", {})
     r = ws_client.get_received()
 
-    print(r)
-    assert r[0]["name"] == "message"
+    print("joingame event: ", r)
+    assert r[0]["name"] == "player_info"
 
 
 def test_classification_correct(client):
+    """
+        tests wether a player is able to join a game and submit a image
+        for classification and get the result from the classification
+    """
     flask_client, ws_client = client
 
     assert ws_client.is_connected()
 
-    # ws_client.emit("joinGame", {})
+    ws_client.emit("joinGame", {})
 
-    path = "harambe.png"
-    with open(path, "rb") as hh:
+    r = ws_client.get_received()
+    print("joined game event", r[0]["args"][0])
+    args = json.loads(r[0]["args"][0])
+    game_id = args["game_id"]
+    print("game id: ", game_id)
+    with open(HARAMBE_PATH, "rb") as hh:
         data_stream = hh.read()
 
         tmp = tempfile.SpooledTemporaryFile()
@@ -44,13 +57,22 @@ def test_classification_correct(client):
         # Create file storage object containing the image
         content_type = "image/png"
         image = werkzeug.datastructures.FileStorage(
-            stream=tmp, filename=path, content_type=content_type
+            stream=tmp, filename=HARAMBE_PATH, content_type=content_type
         )
 
-        ws_client.emit("classify", {}, image)
+        data = {"game_id": game_id, "time_left": 1}
+
+        ws_client.emit("classify", data, image.stream.read())
 
     r = ws_client.get_received()
 
-    assert r[1]["name"] == "prediction"
-    print(r[1])
-    assert False
+    print("prediction", r)
+    assert r[0]["name"] == "prediction"
+    assert type(r[0]["args"][0]["certainty"]) is dict
+    assert type(r[0]["args"][0]["guess"]) is str
+    assert type(r[0]["args"][0]["hasWon"]) is bool
+
+
+def test_player_correct_state_after_classify(client):
+    """TODO: implement me"""
+    pass
