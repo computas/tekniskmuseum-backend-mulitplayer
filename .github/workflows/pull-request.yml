@@ -36,4 +36,4 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
     - name: Run tests
-      run: cd src && python runTests.py --keys='${{ secrets.TEST_SETTINGS }}'
+      run: cd src && python runTests.py --keys="${{ secrets.TEST_SETTINGS }}"
