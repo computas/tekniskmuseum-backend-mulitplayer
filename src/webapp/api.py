@@ -102,8 +102,8 @@ def handle_joinGame(json_data):
 @socketio.on("newRound")
 def handle_newRound(json_data):
     player_id = request.sid
-    json = json.loads(json_data)
-    game_id = json["game_id"]
+    jd = json.loads(json_data)
+    game_id = jd["game_id"]
     models.update_game_for_player(game_id, player_id, 0, "ReadyToDraw")
     opponent = models.get_opponent(game_id, player_id)
     if opponent.state == "ReadyToDraw":
@@ -174,7 +174,6 @@ def handle_endGame(json_data):
     # Retrieve the opponent (client) to pass on the score to
     opponent = models.get_opponent(game_id, player_id)
     emit("endGame", json.dumps(return_data), room=opponent.player_id)
-    
 
 
 @socketio.on_error()
