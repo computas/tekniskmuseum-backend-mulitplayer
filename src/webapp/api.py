@@ -90,6 +90,10 @@ def handle_joinGame(json_data):
 
 @socketio.on("newRound")
 def handle_newRound(json_data):
+    """
+        Handles new round. If both players are ready to draw, a label will be sent 
+        to both players and their state will be set to Drawing.
+    """
     player_id = request.sid
     data = json.loads(json_data)
     game_id = data["game_id"]
