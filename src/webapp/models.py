@@ -17,6 +17,7 @@ class Iteration(db.Model):
     """
         Model for storing the currently used iteration of the ML model.
     """
+
     iteration_name = db.Column(db.String(64), primary_key=True)
 
 
@@ -26,10 +27,16 @@ class Games(db.Model):
        inserted values match the column values. player_id column value cannot
        be String when a long hex is given.
     """
+
     game_id = db.Column(db.NVARCHAR(32), primary_key=True)
     session_num = db.Column(db.Integer, default=1)
     labels = db.Column(db.String(64))
     date = db.Column(db.DateTime)
+
+    players = db.relationship("Players", uselist=False, back_populates="game")
+    mulitplay = db.relationship(
+        "MulitPlayer", uselist=False, back_populates="game"
+    )
 
 
 class Scores(db.Model):
@@ -37,6 +44,7 @@ class Scores(db.Model):
         This is the Scores model in the database. It is important that the
         inserted values match the column values.
     """
+
     score_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(32))
     score = db.Column(db.Integer, nullable=False)
@@ -48,18 +56,31 @@ class Players(db.Model):
         Table for attributes connected to a player in the game. game_id is a
         foreign key to the game table.
     """
+
     player_id = db.Column(db.NVARCHAR(32), primary_key=True)
-    game_id = db.Column(db.NVARCHAR(32), primary_key=True, nullable=False)
+    game_id = db.Column(
+        db.NVARCHAR(32),
+        db.ForeignKey("games.game_id"),
+        primary_key=True,
+        nullable=False,
+    )
     state = db.Column(db.String(32), nullable=False)
+
+    game = db.relationship("Games", back_populates="players")
 
 
 class MulitPlayer(db.Model):
     """
         Table for storing players who partisipate in the same game.
     """
-    game_id = db.Column(db.NVARCHAR(32), primary_key=True)
+
+    game_id = db.Column(
+        db.NVARCHAR(32), db.ForeignKey("games.game_id"), primary_key=True
+    )
     player_1 = db.Column(db.NVARCHAR(32))
     player_2 = db.Column(db.NVARCHAR(32))
+
+    game = db.relationship("Games", back_populates="mulitplay")
 
 
 class Labels(db.Model):
@@ -69,6 +90,7 @@ class Labels(db.Model):
         - translating english labels into norwgian
         - keeping track of all possible labels
     """
+
     english = db.Column(db.String(32), primary_key=True)
     norwegian = db.Column(db.String(32))
 
@@ -158,26 +180,23 @@ def insert_into_players(player_id, game_id, state):
         and isinstance(state, str)
     ):
         try:
-            player = Players(
-                player_id=player_id, game_id=game_id, state=state
-            )
+            player = Players(player_id=player_id, game_id=game_id, state=state)
             db.session.add(player)
             db.session.commit()
             return True
         except Exception as e:
             raise Exception("Could not insert into games: " + str(e))
     else:
-        raise excp.BadRequest(
-            "All params has to be string."
-        )
+        raise excp.BadRequest("All params has to be string.")
 
 
 def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
     """
         Docstring.
     """
-    player2_is_str_or_none = isinstance(
-        player_2_id, str) or player_2_id is None
+    player2_is_str_or_none = (
+        isinstance(player_2_id, str) or player_2_id is None
+    )
     if (
         isinstance(player_1_id, str)
         and player2_is_str_or_none
@@ -193,9 +212,7 @@ def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
         except Exception as e:
             raise Exception("Could not insert into mulitplayer: " + str(e))
     else:
-        raise excp.BadRequest(
-            "All params has to be string."
-        )
+        raise excp.BadRequest("All params has to be string.")
 
 
 def check_player2_in_mulitplayer(player_id):
@@ -239,8 +256,7 @@ def get_opponent(game_id, player_id):
     """
         Return the player in game record with the corresponding gameID.
     """
-    mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-
+    mp = MulitPlayer.query.get(game_id)
     if mp is None:
         # Needs to be changed to socket error
         raise excp.BadRequest("Token invalid or expired")
@@ -271,9 +287,9 @@ def update_mulitplayer(player2_id, game_id):
         Update mulitplayer with player 2's id.
     """
     try:
-        mp = MulitPlayer.query.filter_by(game_id=game_id).first()
-        player_1 = Players.query.filter_by(player_id=mp.player_1).first()
-        player_1.game_state = "Ready"
+        mp = MulitPlayer.query.get(game_id)
+        player_1 = Players.query.get([mp.player_1, game_id])
+        player_1.state = "Ready"
         mp.player_2 = player2_id
         db.session.commit()
         return True
@@ -304,9 +320,7 @@ def delete_session_from_game(game_id):
     """
     try:
         game = Games.query.get(game_id)
-        db.session.query(Players).filter(
-            Players.game_id == game_id
-        ).delete()
+        db.session.query(Players).filter(Players.game_id == game_id).delete()
         db.session.delete(game)
         db.session.commit()
         return "Record deleted."
@@ -395,7 +409,7 @@ def insert_into_labels(english, norwegian):
 
 def get_n_labels(n):
     """
-        Reads all rows from database and chooses 3 random labels in a list
+        Reads all rows from database and chooses n random labels in a list
     """
     try:
         # read all english labels in database
@@ -406,3 +420,25 @@ def get_n_labels(n):
 
     except Exception as e:
         raise Exception("Could not read Labels table: " + str(e))
+
+
+def get_all_labels():
+    """
+        Reads all labels from database
+    """
+    try:
+        # read all english labels in database
+        labels = Labels.query.all()
+        return [str(label.english) for label in labels]
+
+    except Exception as e:
+        raise Exception("Could not read Labels table: " + str(e))
+
+
+def get_iteration_name():
+    """
+        Returns the first and only iteration name that should be in the model
+    """
+    iteration = Iteration.query.filter_by().first()
+    assert iteration.iteration_name is not None
+    return iteration.iteration_name
