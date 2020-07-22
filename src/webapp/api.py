@@ -47,6 +47,11 @@ def connect():
 
 @socketio.on("disconnect")
 def disconnect():
+    """
+        When a player disconnects from a session this function tells the
+        other player in the room who left and deletes all records in the
+        database connected to the session. Old sessions is also deleted.
+    """
     player_id = request.sid
     player = models.get_player(player_id)
     game = models.get_game(player.game_id)
@@ -56,6 +61,7 @@ def disconnect():
         id = "2"
     emit("game_over", "Player " + id + " left", room=game.game_id)
     models.delete_session_from_game(game.game_id)
+    models.delete_old_games()
     print("=== client disconnected ===")
 
 

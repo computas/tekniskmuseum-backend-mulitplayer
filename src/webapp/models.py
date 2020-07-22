@@ -355,6 +355,9 @@ def delete_old_games():
             db.session.query(Players).filter(
                 Players.game_id == game.game_id
             ).delete()
+            db.session.query(MulitPlayer).filter(
+                MulitPlayer.game_id == game.game_id
+            ).delete()
             db.session.delete(game)
 
         db.session.commit()
