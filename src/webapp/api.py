@@ -55,16 +55,12 @@ def disconnect():
     player_id = request.sid
     player = models.get_player(player_id)
     game = models.get_game(player.game_id)
-    if player_id == models.get_mulitplayer(player.game_id).player_1:
-        id = "1"
-    else:
-        id = "2"
     data = {
-        "game_over": True,
-        "player_left": id
+        "player_disconnected": True
     }
-    emit("game_over", json.dumps(data), room=game.game_id)
+    emit("player_disconnected", json.dumps(data), room=game.game_id)
     models.delete_session_from_game(game.game_id)
+    models.delete_old_games()
     print("=== client disconnected ===")
 
 
@@ -123,21 +119,13 @@ def handle_joinGame(json_data):
 
 @socketio.on("getLabel")
 def handle_getLabel(json_data):
+    """
+
+    """
     player_id = request.sid
     data = json.loads(json_data)
     game_id = data["game_id"]
-    models.update_game_for_player(game_id, player_id, 0, "ReadyToDraw")
-    opponent = models.get_opponent(game_id, player_id)
-
-    if opponent.state == "ReadyToDraw":
-        data = json.loads(get_label(game_id))
-        data["ready"] = True
-        models.update_game_for_player(game_id, player_id, 0, "Drawing")
-        models.update_game_for_player(game_id, opponent.player_id, 0, "Drawing")
-    
-    else:
-        data = {"ready": False}
-    
+    data = json.loads(get_label(game_id))
     emit("getLabel", json.dumps(data), room=game_id)
 
 
