@@ -34,7 +34,8 @@ def test_join_game_responds(client):
 
 def test_classification_correct(client):
     """
-        tests wether a player is able to join a game and submit a image for classification and get the result from the classification
+        tests wether a player is able to join a game and submit a image
+        for classification and get the result from the classification
     """
     flask_client, ws_client = client
 
