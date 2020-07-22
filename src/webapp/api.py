@@ -71,6 +71,7 @@ def disconnect():
 
 @socketio.on("message")
 def handle_message(message):
+    emit("message", "test")
     print("client: " + str(message))
 
 
@@ -109,33 +110,36 @@ def handle_joinGame(json_data):
         models.insert_into_mulitplayer(game_id, player_id, None)
         player = "player_1"
         is_ready = False
-
+        
+    data = {
+        "player": player,
+        "player_id": player_id,
+        "game_id": game_id
+    }
+    state_data = { "ready": is_ready}
     join_room(game_id)
-    data = {"player": player, "player_id": player_id, "game_id": game_id}
-    state = {"ready": is_ready}
-    emit("player_info", json.dumps(data), sid=player_id)
-    emit("state_info", json.dumps(state), room=game_id)
+    emit("joinGame", json.dumps(data), sid=player_id)
+    emit("joinGame", json.dumps(state_data), room=game_id)
 
 
-@socketio.on("newRound")
-def handle_newRound(json_data):
+@socketio.on("getLabel")
+def handle_getLabel(json_data):
     player_id = request.sid
     data = json.loads(json_data)
     game_id = data["game_id"]
     models.update_game_for_player(game_id, player_id, 0, "ReadyToDraw")
     opponent = models.get_opponent(game_id, player_id)
+
     if opponent.state == "ReadyToDraw":
-        data = get_label(game_id)
-        state = {
-            "ready": True
-        }
+        data = json.loads(get_label(game_id))
+        data["ready"] = True
         models.update_game_for_player(game_id, player_id, 0, "Drawing")
         models.update_game_for_player(game_id, opponent.player_id, 0, "Drawing")
-        emit("get_label", data, room=game_id)
-        emit("state_info", json.dumps(state), room=game_id)
+    
     else:
-        state = {"ready": False}
-        emit("state_info", json.dumps(state), room=game_id)
+        data = {"ready": False}
+    
+    emit("getLabel", json.dumps(data), room=game_id)
 
 
 def get_label(game_id):

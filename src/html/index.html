@@ -52,7 +52,7 @@
         });
 
 
-        socket.on('player_info', (json_data) => {
+        socket.on('joinGame', (json_data) => {
             print(json_data);
         });
 
@@ -62,12 +62,7 @@
         });
 
 
-        socket.on('state_info', (json_data) => {
-            print(json_data);
-        });
-
-
-        socket.on('get_label', (json_data) => {
+        socket.on('getLabel', (json_data) => {
             print(json_data);
         })
 
