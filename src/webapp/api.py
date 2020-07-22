@@ -65,7 +65,6 @@ def disconnect():
     }
     emit("game_over", json.dumps(data), room=game.game_id)
     models.delete_session_from_game(game.game_id)
-    models.delete_old_games()
     print("=== client disconnected ===")
 
 
