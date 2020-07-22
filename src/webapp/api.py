@@ -51,15 +51,10 @@ def disconnect():
     player_id = request.sid
     player = models.get_player(player_id)
     game = models.get_game(player.game_id)
-    if player_id == models.get_mulitplayer(player.game_id).player_1:
-        id = "1"
-    else:
-        id = "2"
     data = {
-        "game_over": True,
-        "player_left": id
+        "player_disconnected": True
     }
-    emit("game_over", json.dumps(data), room=game.game_id)
+    emit("player_disconnected", json.dumps(data), room=game.game_id)
     models.delete_session_from_game(game.game_id)
     print("=== client disconnected ===")
 
@@ -107,32 +102,29 @@ def handle_joinGame(json_data):
         player = "player_1"
         is_ready = False
 
+    data = {
+        "player": player,
+        "player_id": player_id,
+        "game_id": game_id
+    }
+    state_data = {"ready": is_ready}
     join_room(game_id)
-    data = {"player": player, "player_id": player_id, "game_id": game_id}
-    state = {"ready": is_ready}
-    emit("player_info", json.dumps(data), sid=player_id)
-    emit("state_info", json.dumps(state), room=game_id)
+    # Emit message with player-state to each player triggering the event
+    emit("joinGame", json.dumps(data), sid=player_id)
+    # Emit message with game-state to both players each time a player
+    # triggers the event
+    emit("joinGame", json.dumps(state_data), room=game_id)
 
 
-@socketio.on("newRound")
-def handle_newRound(json_data):
-    player_id = request.sid
-    jd = json.loads(json_data)
-    game_id = jd["game_id"]
-    models.update_game_for_player(game_id, player_id, 0, "ReadyToDraw")
-    opponent = models.get_opponent(game_id, player_id)
-    if opponent.state == "ReadyToDraw":
-        data = get_label(game_id)
-        state = {
-            "ready": True
-        }
-        models.update_game_for_player(game_id, player_id, 0, "Drawing")
-        models.update_game_for_player(game_id, opponent.player_id, 0, "Drawing")
-        emit("get_label", data, room=game_id)
-        emit("state_info", json.dumps(state), room=game_id)
-    else:
-        state = {"ready": False}
-        emit("state_info", json.dumps(state), room=game_id)
+@socketio.on("getLabel")
+def handle_getLabel(json_data):
+    """
+        Event for providing both players with a new label.
+    """
+    data = json.loads(json_data)
+    game_id = data["game_id"]
+    label = json.loads(get_label(game_id))
+    emit("getLabel", json.dumps(label), room=game_id)
 
 
 def get_label(game_id):
@@ -229,6 +221,8 @@ def handle_endGame(json_data):
     score_player = data["score"]
     player_id = data["player_id"]
     name_player = data["name"]
+    if models.get_game(game_id).session_num != setup.NUM_GAMES + 1:
+        raise excp.BadRequest("Game not finished")
     # Insert score information into db
     models.insert_into_scores(name_player, score_player, date)
     # Create a list containing player data which is sent out to both players
@@ -239,6 +233,7 @@ def handle_endGame(json_data):
     # Retrieve the opponent (client) to pass on the score to
     opponent = models.get_opponent(game_id, player_id)
     emit("endGame", json.dumps(return_data), room=opponent.player_id)
+    models.delete_old_games()
 
 
 @socketio.on_error()

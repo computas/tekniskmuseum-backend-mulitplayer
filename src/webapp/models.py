@@ -2,7 +2,6 @@
     Classes for describing tables in the database and additional functions for
     manipulating them.
 """
-
 import datetime
 import csv
 import os

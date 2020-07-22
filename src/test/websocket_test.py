@@ -28,8 +28,9 @@ def test_join_game_responds(client):
     ws_client.emit("joinGame", {})
     r = ws_client.get_received()
 
+    assert r[0]["name"] == "joinGame"
     print("joingame event: ", r)
-    assert r[0]["name"] == "player_info"
+
 
 
 def test_classification_correct(client):
