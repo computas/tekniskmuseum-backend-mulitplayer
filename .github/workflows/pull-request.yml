@@ -21,7 +21,7 @@ jobs:
 
     - name: Install dependencies
       run: pip install flake8
-  run-linter:
+  run-tests:
     name: Run unit tests
     runs-on: ubuntu-latest
 
