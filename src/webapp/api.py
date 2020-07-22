@@ -41,7 +41,15 @@ def connect():
 
 @socketio.on("disconnect")
 def disconnect():
-
+    player_id = request.sid
+    player = models.get_player(player_id)
+    game = models.get_game(player.game_id)
+    if player_id == models.get_mulitplayer(player.game_id).player_1:
+        id = "1"
+    else:
+        id = "2"
+    emit("game_over", "Player " + id + " left", room=game.game_id)
+    models.delete_session_from_game(game.game_id)
     print("=== client disconnected ===")
 
 
@@ -87,6 +95,7 @@ def handle_joinGame(json_data):
         models.insert_into_players(player_id, game_id, "Waiting")
         models.insert_into_mulitplayer(game_id, player_id, None)
         join_room(game_id)
+
         data = {
             "player": "player_1",
             "player_id": player_id,
@@ -111,11 +120,10 @@ def handle_newRound(json_data):
         state = {
             "ready": True
         }
-        models.update_game_for_player(game_id, player_id, 1, "Waiting")
-        models.update_game_for_player(game_id, opponent.player_id, 0, "Waiting")
+        models.update_game_for_player(game_id, player_id, 0, "Drawing")
+        models.update_game_for_player(game_id, opponent.player_id, 0, "Drawing")
         emit("get_label", data, room=game_id)
         emit("state_info", json.dumps(state), room=game_id)
-        #send(data, room=game_id)
     else:
         state = {
             "ready": False
@@ -144,12 +152,7 @@ def get_label(game_id):
 
 @socketio.on("classify")
 def handle_classify(json_data):
-    # data = json.loads(json_data)
-    # TODO: do classification here
-    response = {
-        "foo": "bar"
-    }
-    emit("prediction", response)
+    pass
 
 
 @socketio.on("endGame")

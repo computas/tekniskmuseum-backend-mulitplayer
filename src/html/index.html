@@ -60,9 +60,15 @@
     });
 
 
-   socket.on('get_label', (json_data)=> {
-       print(json_data);
-   })
+    socket.on('get_label', (json_data)=> {
+        print(json_data);
+    });
+
+
+    socket.on('game_over', (json_data)=> {
+        print(json_data);
+    });
+
 
     function print(message) {
 	document.getElementById("out").innerHTML += "<br>" + message;

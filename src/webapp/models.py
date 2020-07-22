@@ -52,7 +52,7 @@ class Players(db.Model):
         foreign key to the game table.
     """
     player_id = db.Column(db.NVARCHAR(32), primary_key=True)
-    game_id = db.Column(db.NVARCHAR(32), db.ForeignKey("games.game_id"), primary_key=True, nullable=False)
+    game_id = db.Column(db.NVARCHAR(32), db.ForeignKey("games.game_id"), nullable=False)
     state = db.Column(db.String(32), nullable=False)
 
     game = db.relationship("Games", back_populates="players")
@@ -233,13 +233,24 @@ def get_game(game_id):
 
 def get_player(player_id):
     """
-        Return the player in game record with the corresponding player_id.
+        Return the player record with the corresponding player_id.
     """
     player = Players.query.get(player_id)
     if player is None:
         raise excp.BadRequest("player_id invalid or expired")
 
     return player
+
+
+def get_mulitplayer(game_id):
+    """
+        Return the mulitplayer with the corresponding game_id.
+    """
+    mp = MulitPlayer.query.get(game_id)
+    if mp is None:
+        raise excp.BadRequest("game_id invalid or expired")
+
+    return mp
 
 
 def get_opponent(game_id, player_id):
@@ -251,8 +262,8 @@ def get_opponent(game_id, player_id):
         # Needs to be changed to socket error
         raise excp.BadRequest("Token invalid or expired")
     elif mp.player_1 == player_id:
-        return Players.query.get([mp.player_2, game_id])
-    return Players.query.get([mp.player_1, game_id])
+        return Players.query.get(mp.player_2)
+    return Players.query.get(mp.player_1)
 
 
 def update_game_for_player(game_id, player_id, ses_num, state):
@@ -263,7 +274,7 @@ def update_game_for_player(game_id, player_id, ses_num, state):
     try:
         game = Games.query.get(game_id)
         game.session_num += ses_num
-        player = Players.query.get([player_id, game_id])
+        player = Players.query.get(player_id)
         player.state = state
         db.session.commit()
         return True
@@ -277,7 +288,7 @@ def update_mulitplayer(player2_id, game_id):
     """
     try:
         mp = MulitPlayer.query.get(game_id)
-        player_1 = Players.query.get([mp.player_1, game_id])
+        player_1 = Players.query.get(mp.player_1)
         player_1.state = "Ready"
         mp.player_2 = player2_id
         db.session.commit()
@@ -312,7 +323,9 @@ def delete_session_from_game(game_id):
         db.session.query(Players).filter(
             Players.game_id == game_id
         ).delete()
+        mp = MulitPlayer.query.get(game_id)
         db.session.delete(game)
+        db.session.delete(mp)
         db.session.commit()
         return "Record deleted."
     except AttributeError as e:
