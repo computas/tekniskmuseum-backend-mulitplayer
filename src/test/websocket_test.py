@@ -4,6 +4,8 @@ import tempfile
 import werkzeug
 from webapp.api import app, socketio
 
+HARAMBE_PATH = "../data/harambe.png"
+
 
 @pytest.fixture
 def client():
@@ -26,7 +28,7 @@ def test_join_game_responds(client):
     ws_client.emit("joinGame", {})
     r = ws_client.get_received()
 
-    print(r)
+    print("joingame event: ", r)
     assert r[0]["name"] == "player_info"
 
 
@@ -44,8 +46,7 @@ def test_classification_correct(client):
     print(r[0]["args"][0])
     args = json.loads(r[0]["args"][0])
     game_id = args["game_id"]
-    path = "harambe.png"
-    with open(path, "rb") as hh:
+    with open(HARAMBE_PATH, "rb") as hh:
         data_stream = hh.read()
 
         tmp = tempfile.SpooledTemporaryFile()
@@ -54,7 +55,7 @@ def test_classification_correct(client):
         # Create file storage object containing the image
         content_type = "image/png"
         image = werkzeug.datastructures.FileStorage(
-            stream=tmp, filename=path, content_type=content_type
+            stream=tmp, filename=HARAMBE_PATH, content_type=content_type
         )
 
         data = {"game_id": game_id, "time_left": 1}
