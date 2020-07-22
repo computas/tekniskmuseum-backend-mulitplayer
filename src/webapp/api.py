@@ -86,6 +86,8 @@ def handle_joinGame(json_data):
           the game.
     """
     player_id = request.sid
+    # Players join their own room as well
+    join_room(player_id)
     game_id = models.check_player2_in_mulitplayer(player_id)
 
     if game_id is not None:
@@ -105,13 +107,13 @@ def handle_joinGame(json_data):
         models.insert_into_mulitplayer(game_id, player_id, None)
         player = "player_1"
         is_ready = False
-        
+
     data = {
         "player": player,
         "player_id": player_id,
         "game_id": game_id
     }
-    state_data = { "ready": is_ready}
+    state_data = {"ready": is_ready}
     join_room(game_id)
     emit("joinGame", json.dumps(data), sid=player_id)
     emit("joinGame", json.dumps(state_data), room=game_id)
@@ -120,9 +122,8 @@ def handle_joinGame(json_data):
 @socketio.on("getLabel")
 def handle_getLabel(json_data):
     """
-
+        Event for providing both players with a new label.
     """
-    player_id = request.sid
     data = json.loads(json_data)
     game_id = data["game_id"]
     data = json.loads(get_label(game_id))
@@ -160,9 +161,30 @@ def handle_classify(data, image):
 
 @socketio.on("endGame")
 def handle_endGame(json_data):
-    # TODO: implement me!
+    """
+        Event which ends the final game of the two players. The players provide
+        their scores and the player with the highest score is deemed the winner.
+        The two scores are finally stored in the database.
+    """
+    date = datetime.datetime.today()
     data = json.loads(json_data)
-    emit("endGame", data)
+    # Get data from given player
+    game_id = data["game_id"]
+    score_player = data["score"]
+    player_id = data["player_id"]
+    name_player = data["name"]
+    if models.get_game(game_id).session_num != setup.NUM_GAMES + 1:
+        raise excp.BadRequest("Game not finished")
+    # Insert score information into db
+    models.insert_into_scores(name_player, score_player, date)
+    # Create a list containing player data which is sent out to both players
+    return_data = {
+        "score": score_player,
+        "playerId": player_id
+    }
+    # Retrieve the opponent (client) to pass on the score to
+    opponent = models.get_opponent(game_id, player_id)
+    emit("endGame", json.dumps(return_data), room=opponent.player_id)
 
 
 @socketio.on_error()
