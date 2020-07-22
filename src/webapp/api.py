@@ -128,6 +128,9 @@ def get_label(game_id):
 
 
 def translate_probabilities(labels):
+    """
+        translate the labels in a probability dictionary to norwegian
+    """
     translation_dict = models.get_translation_dict()
     return dict(
         [(translation_dict[label], prob) for label, prob in labels.items()]
@@ -136,6 +139,11 @@ def translate_probabilities(labels):
 
 @socketio.on("classify")
 def handle_classify(data, image):
+    """
+        WS event for accepting images for classification
+        params: data: {"game_id": str: the game_id you get from joinGame, "time_left": float: the time left until the game is over}
+               image: binary string with the image data 
+    """
     image_stream = BytesIO(image)
     allowed_file(image_stream)
 
@@ -153,11 +161,12 @@ def handle_classify(data, image):
     has_won = correct_label == best_guess and time_left > 0
 
     if has_won:
-        models.update_game_for_player(player_id, game_id, 1, "Done")
+        models.update_game_for_player(player_id, game_id, 0, "Done")
         opponent = models.get_opponent(game_id, player_id)
         opponent_done = opponent.state == "Done"
 
         if opponent_done:
+            models.update_game_for_player(player_id, game_id, 1, "Done")
             emit("round_over", room=game_id)
 
     response = {
