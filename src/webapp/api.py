@@ -166,7 +166,6 @@ def handle_classify(data, image):
     time_left = data["time_left"]
 
     game = models.get_game(game_id)
-
     labels = json.loads(game.labels)
     correct_label = labels[game.session_num]
 
