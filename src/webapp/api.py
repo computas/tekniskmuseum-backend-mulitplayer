@@ -140,7 +140,7 @@ def handle_classify(data, image):
 
     game = models.get_game(game_id)
     labels = json.loads(game.labels)
-    correct_label = labels[game.session_num]
+    correct_label = labels[game.session_num-1]
 
     has_won = correct_label == best_guess and time_left > 0
     time_out = time_left <= 0
@@ -249,12 +249,12 @@ def allowed_file(image):
     image.seek(0)
     pimg = Image.open(image)
 
-    is_png = pimg.format == "PNG"
+    #is_png = pimg.format == "PNG"
 
     height, width = pimg.size
     correct_res = (height >= 256) and (width >= 256)
 
     image.seek(0)
 
-    if is_png or too_large or not correct_res:
+    if too_large or not correct_res:
         raise excp.UnsupportedMediaType("Wrong image format")
