@@ -82,7 +82,7 @@ def handle_joinGame(json_data):
     player_id = request.sid
     # Players join their own room as well
     join_room(player_id)
-    game_id = models.check_player2_in_mulitplayer(player_id)
+    game_id = models.check_player_2_in_mulitplayer(player_id)
 
     if game_id is not None:
         # Update mulitplayer table by inserting player_id for player_2 and
@@ -109,7 +109,7 @@ def handle_joinGame(json_data):
     }
     state_data = {"ready": is_ready}
     join_room(game_id)
-        # Emit message with player-state to each player triggering the event
+    # Emit message with player-state to each player triggering the event
     emit("joinGame", json.dumps(data), sid=player_id)
     # Emit message with game-state to both players each time a player
     # triggers the event
@@ -127,40 +127,13 @@ def handle_getLabel(json_data):
     emit("getLabel", json.dumps(label), room=game_id)
 
 
-def get_label(game_id):
-    """
-        Provides the client with a new word.
-    """
-    game = models.get_game(game_id)
-
-    # Check if game complete
-    if game.session_num > setup.NUM_GAMES:
-        send("Number of games exceeded")
-
-    labels = json.loads(game.labels)
-    label = labels[game.session_num - 1]
-    norwegian_label = models.to_norwegian(label)
-    data = {"label": norwegian_label}
-    return json.dumps(data)
-
-
-def translate_probabilities(labels):
-    """
-        translate the labels in a probability dictionary to norwegian
-    """
-    translation_dict = models.get_translation_dict()
-    return dict(
-        [(translation_dict[label], prob) for label, prob in labels.items()]
-    )
-
-
 @socketio.on("classify")
 def handle_classify(data, image):
     """
         WS event for accepting images for classification
-        params: data: {"game_id": str: the game_id you get from joinGame, 
+        params: data: {"game_id": str: the game_id you get from joinGame,
                        "time_left": float: the time left until the game is over}
-               image: binary string with the image data 
+               image: binary string with the image data
     """
     image_stream = BytesIO(image)
     allowed_file(image_stream)
@@ -247,6 +220,33 @@ def error_handler(error):
         emit("error", str(error))
     else:
         app.logger.error(error)
+
+
+def get_label(game_id):
+    """
+        Provides the client with a new word.
+    """
+    game = models.get_game(game_id)
+
+    # Check if game complete
+    if game.session_num > setup.NUM_GAMES:
+        send("Number of games exceeded")
+
+    labels = json.loads(game.labels)
+    label = labels[game.session_num - 1]
+    norwegian_label = models.to_norwegian(label)
+    data = {"label": norwegian_label}
+    return json.dumps(data)
+
+
+def translate_probabilities(labels):
+    """
+        translate the labels in a probability dictionary to norwegian
+    """
+    translation_dict = models.get_translation_dict()
+    return dict(
+        [(translation_dict[label], prob) for label, prob in labels.items()]
+    )
 
 
 def allowed_file(image):
