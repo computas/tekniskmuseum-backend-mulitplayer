@@ -209,7 +209,7 @@ def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
         raise excp.BadRequest("All params has to be string.")
 
 
-def check_player2_in_mulitplayer(player_id):
+def check_player_2_in_mulitplayer(player_id):
     """
         Function to check if player2 is none in database. If none, a player
         can be added to the game.
@@ -286,7 +286,7 @@ def update_game_for_player(game_id, player_id, ses_num, state):
         raise Exception("Could not update game for player: " + str(e))
 
 
-def update_mulitplayer(player2_id, game_id):
+def update_mulitplayer(player_2_id, game_id):
     """
         Update mulitplayer with player 2's id.
     """
@@ -294,7 +294,7 @@ def update_mulitplayer(player2_id, game_id):
         mp = MulitPlayer.query.get(game_id)
         player_1 = Players.query.get(mp.player_1)
         player_1.state = "Ready"
-        mp.player_2 = player2_id
+        mp.player_2 = player_2_id
         db.session.commit()
         return True
     except Exception as e:
