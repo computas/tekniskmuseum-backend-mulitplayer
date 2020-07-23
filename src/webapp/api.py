@@ -45,15 +45,13 @@ def connect():
 def disconnect():
     """
         When a player disconnects from a session this function tells the
-        other player in the room who left and deletes all records in the
-        database connected to the session. Old sessions is also deleted.
+        other player in the room that someone left and deletes all records in the
+        database connected to the session.
     """
     player_id = request.sid
     player = models.get_player(player_id)
     game = models.get_game(player.game_id)
-    data = {
-        "player_disconnected": True
-    }
+    data = {"player_disconnected": True}
     emit("player_disconnected", json.dumps(data), room=game.game_id)
     models.delete_session_from_game(game.game_id)
     print("=== client disconnected ===")
@@ -102,14 +100,10 @@ def handle_joinGame(json_data):
         player_nr = "player_1"
         is_ready = False
 
-    data = {
-        "player_nr": player_nr,
-        "player_id": player_id,
-        "game_id": game_id
-    }
+    data = {"player_nr": player_nr, "player_id": player_id, "game_id": game_id}
     state_data = {"ready": is_ready}
     join_room(game_id)
-        # Emit message with player-state to each player triggering the event
+    # Emit message with player-state to each player triggering the event
     emit("joinGame", json.dumps(data), sid=player_id)
     # Emit message with game-state to both players each time a player
     # triggers the event
@@ -172,7 +166,6 @@ def handle_classify(data, image):
     time_left = data["time_left"]
 
     game = models.get_game(game_id)
-
     labels = json.loads(game.labels)
     correct_label = labels[game.session_num]
 
@@ -226,10 +219,7 @@ def handle_endGame(json_data):
     # Insert score information into db
     models.insert_into_scores(name_player, score_player, date)
     # Create a list containing player data which is sent out to both players
-    return_data = {
-        "score": score_player,
-        "playerId": player_id
-    }
+    return_data = {"score": score_player, "playerId": player_id}
     # Retrieve the opponent (client) to pass on the score to
     opponent = models.get_opponent(game_id, player_id)
     emit("endGame", json.dumps(return_data), room=opponent.player_id)
