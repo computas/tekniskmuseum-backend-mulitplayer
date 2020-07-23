@@ -13,22 +13,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@master
+      - uses: actions/checkout@master
 
-    - name: Set up Python version
-      uses: actions/setup-python@v1
-      with:
-        python-version: '3.7'
+      - name: Set up Python version
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.7"
 
-    - name: Build using AppService-Build
-      uses: azure/appservice-build@v1
-      with:
-        platform: python
-        platform-version: '3.7'
+      - name: "Run pip"
+        shell: bash
+        run: |
+          # If your web app project is not located in your repository's root
+          # Please change your directory for pip in pushd
+          pushd .
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt --target=".python_packages/lib/python3.7/site-packages"
+          popd
 
-    - name: 'Deploy to Azure Web App'
-      uses: azure/webapps-deploy@v1
-      with:
-        app-name: 'tekniskback-mp'
-        slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_9822f8e8eeb747f4b10d91c880bcc0c8 }}
+      - name: Build using AppService-Build
+        uses: azure/appservice-build@v1
+        with:
+          platform: python
+          platform-version: "3.7"
+
+      - name: "Deploy to Azure Web App"
+        uses: azure/webapps-deploy@v1
+        with:
+          app-name: "tekniskback-mp"
+          slot-name: "production"
+          publish-profile: ${{ secrets.AzureAppService_PublishProfile_9822f8e8eeb747f4b10d91c880bcc0c8 }}
