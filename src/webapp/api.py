@@ -6,7 +6,7 @@
 """
 from customvision.classifier import Classifier
 from werkzeug import exceptions as excp
-from flask_socketio import SocketIO, emit, send, join_room
+from flask_socketio import SocketIO, emit, send, join_room, close_room
 from flask import request
 from flask import Flask
 from base64 import decodestring, decodebytes
@@ -196,6 +196,8 @@ def handle_endGame(json_data):
     # Retrieve the opponent (client) to pass on the score to
     opponent = models.get_opponent(game_id, player_id)
     emit("endGame", json.dumps(return_data), room=opponent.player_id)
+    # Remove client from room and delete room
+    close_room(player_id)
     models.delete_old_games()
 
 
@@ -249,10 +251,10 @@ def allowed_file(image):
     image.seek(0)
     pimg = Image.open(image)
 
-    is_png = pimg.format == "PNG"
-
     height, width = pimg.size
     correct_res = (height >= 256) and (width >= 256)
+
+    is_png = 'png' in pimg
 
     image.seek(0)
 
