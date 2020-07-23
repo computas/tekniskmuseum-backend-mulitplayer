@@ -2,7 +2,6 @@
     Classes for describing tables in the database and additional functions for
     manipulating them.
 """
-
 import datetime
 import csv
 import os
@@ -58,12 +57,7 @@ class Players(db.Model):
     """
 
     player_id = db.Column(db.NVARCHAR(32), primary_key=True)
-    game_id = db.Column(
-        db.NVARCHAR(32),
-        db.ForeignKey("games.game_id"),
-        primary_key=True,
-        nullable=False,
-    )
+    game_id = db.Column(db.NVARCHAR(32), db.ForeignKey("games.game_id"), nullable=False)
     state = db.Column(db.String(32), nullable=False)
 
     game = db.relationship("Games", back_populates="players")
@@ -215,7 +209,7 @@ def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
         raise excp.BadRequest("All params has to be string.")
 
 
-def check_player2_in_mulitplayer(player_id):
+def check_player_2_in_mulitplayer(player_id):
     """
         Function to check if player2 is none in database. If none, a player
         can be added to the game.
@@ -243,13 +237,24 @@ def get_game(game_id):
 
 def get_player(player_id):
     """
-        Return the player in game record with the corresponding player_id.
+        Return the player record with the corresponding player_id.
     """
     player = Players.query.get(player_id)
     if player is None:
         raise excp.BadRequest("player_id invalid or expired")
 
     return player
+
+
+def get_mulitplayer(game_id):
+    """
+        Return the mulitplayer with the corresponding game_id.
+    """
+    mp = MulitPlayer.query.get(game_id)
+    if mp is None:
+        raise excp.BadRequest("game_id invalid or expired")
+
+    return mp
 
 
 def get_opponent(game_id, player_id):
@@ -261,8 +266,8 @@ def get_opponent(game_id, player_id):
         # Needs to be changed to socket error
         raise excp.BadRequest("Token invalid or expired")
     elif mp.player_1 == player_id:
-        return Players.query.get([mp.player_2, game_id])
-    return Players.query.get([mp.player_1, game_id])
+        return Players.query.get(mp.player_2)
+    return Players.query.get(mp.player_1)
 
 
 def update_game_for_player(game_id, player_id, ses_num, state):
@@ -273,7 +278,7 @@ def update_game_for_player(game_id, player_id, ses_num, state):
     try:
         game = Games.query.get(game_id)
         game.session_num += ses_num
-        player = Players.query.get([player_id, game_id])
+        player = Players.query.get(player_id)
         player.state = state
         db.session.commit()
         return True
@@ -281,15 +286,15 @@ def update_game_for_player(game_id, player_id, ses_num, state):
         raise Exception("Could not update game for player: " + str(e))
 
 
-def update_mulitplayer(player2_id, game_id):
+def update_mulitplayer(player_2_id, game_id):
     """
         Update mulitplayer with player 2's id.
     """
     try:
         mp = MulitPlayer.query.get(game_id)
-        player_1 = Players.query.get([mp.player_1, game_id])
+        player_1 = Players.query.get(mp.player_1)
         player_1.state = "Ready"
-        mp.player_2 = player2_id
+        mp.player_2 = player_2_id
         db.session.commit()
         return True
     except Exception as e:
@@ -319,8 +324,12 @@ def delete_session_from_game(game_id):
     """
     try:
         game = Games.query.get(game_id)
-        db.session.query(Players).filter(Players.game_id == game_id).delete()
+        db.session.query(Players).filter(
+            Players.game_id == game_id
+        ).delete()
+        mp = MulitPlayer.query.get(game_id)
         db.session.delete(game)
+        db.session.delete(mp)
         db.session.commit()
         return "Record deleted."
     except AttributeError as e:
@@ -344,6 +353,9 @@ def delete_old_games():
         for game in games:
             db.session.query(Players).filter(
                 Players.game_id == game.game_id
+            ).delete()
+            db.session.query(MulitPlayer).filter(
+                MulitPlayer.game_id == game.game_id
             ).delete()
             db.session.delete(game)
 
@@ -441,3 +453,16 @@ def get_iteration_name():
     iteration = Iteration.query.filter_by().first()
     assert iteration.iteration_name is not None
     return iteration.iteration_name
+
+
+def get_translation_dict():
+    """
+        Reads all labels from database and create dictionary
+    """
+    try:
+        labels = Labels.query.all()
+        return dict(
+            [(str(label.english), str(label.norwegian)) for label in labels]
+        )
+    except Exception as e:
+        raise Exception("Could not read Labels table: " + str(e))
