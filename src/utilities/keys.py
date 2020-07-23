@@ -20,6 +20,10 @@ else:
 
 
 class Keys:
+    """
+        Class used to get secret keys, for example the connection string for the database
+    """
+
     def get(keyName):
         """
             Returns secret matching the key. Returns appropriate error message
