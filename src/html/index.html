@@ -27,7 +27,7 @@
         integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
     <script type="text/javascript" charset="utf-8">
         // Connect to WS with Socket.IO
-        const socket = io('ws://localhost:5000',
+        const socket = io('ws://localhost:8000',
             {
                 transports: ['websocket']
             }
@@ -57,7 +57,7 @@
         });
 
 
-        socket.on('player_disconnected', (json_data)=> {
+        socket.on('player_disconnected', (json_data) => {
             print(json_data);
         });
 
@@ -67,12 +67,12 @@
         })
 
 
-        socket.on('endGame', function(message) {
+        socket.on('endGame', function (message) {
             print("<b>Game ended: </b>" + message);
         });
 
         function print(message) {
-        document.getElementById("out").innerHTML += "<br>" + message;
+            document.getElementById("out").innerHTML += "<br>" + message;
         }
 
         function sendMessage() {
@@ -82,7 +82,7 @@
             print("<b>message sent: </b>" + input);
             document.getElementById("in").value = "";
         }
-</script>
+    </script>
 
 </body>
 
