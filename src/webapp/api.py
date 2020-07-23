@@ -130,6 +130,7 @@ def handle_classify(data, image):
                image: binary string with the image data
     """
     image_stream = BytesIO(image)
+
     allowed_file(image_stream)
 
     prob_kv, best_guess = classifier.predict_image(image_stream)
@@ -250,13 +251,16 @@ def allowed_file(image):
     # Ensure the file has correct resolution
     image.seek(0)
     pimg = Image.open(image)
-
     height, width = pimg.size
     correct_res = (height >= 256) and (width >= 256)
 
-    # is_png = 'png' in pimg
+    if str(type(pimg)) == "JpegImageFile":
+        is_png = pimg.format == "PNG"
+    else:
+        is_png = pimg
 
+    # print(is_png)
     image.seek(0)
 
-    if is_png or too_large or not correct_res:
+    if not is_png or too_large or not correct_res:
         raise excp.UnsupportedMediaType("Wrong image format")
