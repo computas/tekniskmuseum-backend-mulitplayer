@@ -1,3 +1,3 @@
-#!/bin/bash
-
-gunicorn --chdir src/ --worker-class eventlet app:app
+cd src
+clear
+gunicorn --bind=0.0.0.0 --worker-class eventlet -w 1 webapp.api:app

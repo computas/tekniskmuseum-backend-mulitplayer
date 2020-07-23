@@ -3,3 +3,5 @@
 *.pyc
 *.swp
 venv
+config.json
+src/config.json
