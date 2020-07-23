@@ -14,7 +14,8 @@ from test import config as cfg
 
 
 class TestValues:
-    # PLAYER_ID = uuid.uuid4().hex
+    PLAYER_ID = uuid.uuid4().hex
+    PLAYER_2 = uuid.uuid4().hex
     GAME_ID = uuid.uuid4().hex
     TODAY = datetime.datetime.today()
     CV_ITERATION_NAME_LENGTH = 36
@@ -52,11 +53,22 @@ def test_insert_into_scores():
 
 def test_insert_into_players():
     """
-        Check that record exists in PlayerInGame table after inserting.
+        Check that record exists in Players table after inserting.
     """
     with api.app.app_context():
         result = models.insert_into_players(
             TestValues.PLAYER_ID, TestValues.GAME_ID, cfg.STATE
+        )
+
+    assert result
+
+def test_insert_into_mulitplayer():
+    """
+        Check that record exists in MulitPlayer after inserting.
+    """
+    with api.app.app_context():
+        result = models.insert_into_mulitplayer(TestValues.GAME_ID,
+            TestValues.PLAYER_ID, TestValues.PLAYER_2
         )
 
     assert result
@@ -100,6 +112,15 @@ def test_illegal_parameter_players():
         models.insert_into_players(100, 200, 11)
 
 
+def test_illegal_parameter_mulitplayer():
+    """
+        Check that exception is raised when illegal arguments is passed
+        into player in MulitPlayer table.
+    """
+    with raises(excp.BadRequest):
+        models.insert_into_mulitplayer(100, 200, 11)
+
+
 def test_query_euqals_insert_games():
     """
         Check that inserted record is the same as record catched by query.
@@ -120,6 +141,22 @@ def test_query_equals_insert_players():
 
     assert result.game_id == TestValues.GAME_ID
     assert result.state == cfg.STATE
+
+
+def test_query_equals_insert_players():
+    """
+        Check that inserted record is the same as record catched by query.
+    """
+    with api.app.app_context():
+        result = models.get_player(TestValues.PLAYER_ID)
+
+    assert result.game_id == TestValues.GAME_ID
+    assert result.state == cfg.STATE
+
+def test_check_player_2_in_mulitplayer():
+    """
+    """
+    
 
 
 def test_get_daily_high_score_sorted():

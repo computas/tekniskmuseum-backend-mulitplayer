@@ -54,6 +54,8 @@ def disconnect():
     data = {"player_disconnected": True}
     emit("player_disconnected", json.dumps(data), room=game.game_id)
     models.delete_session_from_game(game.game_id)
+    # Remove client from room and delete room
+    close_room(player_id)
     print("=== client disconnected ===")
 
 
@@ -191,11 +193,13 @@ def handle_endGame(json_data):
         raise excp.BadRequest("Game not finished")
     # Insert score information into db
     models.insert_into_scores(name_player, score_player, date)
-    # Create a list containing player data which is sent out to both players
+    # Create a list containing player data which is sent out to opponent
     return_data = {"score": score_player, "playerId": player_id}
     # Retrieve the opponent (client) to pass on the score to
     opponent = models.get_opponent(game_id, player_id)
     emit("endGame", json.dumps(return_data), room=opponent.player_id)
+    # Remove client from room and delete room
+    close_room(player_id)
     models.delete_old_games()
 
 
