@@ -10,7 +10,7 @@ from webapp import api
 from webapp import models
 from pytest import raises
 from werkzeug import exceptions as excp
-from test import config as cfg
+
 
 
 class TestValues:
@@ -19,6 +19,8 @@ class TestValues:
     GAME_ID = uuid.uuid4().hex
     TODAY = datetime.datetime.today()
     CV_ITERATION_NAME_LENGTH = 36
+    LABELS = "label1, label2, label3"
+    STATE = "Ready"
 
 
 def test_create_tables():
@@ -35,7 +37,7 @@ def test_insert_into_games():
     """
     with api.app.app_context():
         result = models.insert_into_games(
-            TestValues.GAME_ID, cfg.LABELS, TestValues.TODAY
+            TestValues.GAME_ID, TestValues.LABELS, TestValues.TODAY
         )
 
     assert result
@@ -57,7 +59,7 @@ def test_insert_into_players():
     """
     with api.app.app_context():
         result = models.insert_into_players(
-            TestValues.PLAYER_ID, TestValues.GAME_ID, cfg.STATE
+            TestValues.PLAYER_ID, TestValues.GAME_ID, TestValues.STATE
         )
 
     assert result
@@ -128,7 +130,7 @@ def test_query_euqals_insert_games():
     with api.app.app_context():
         result = models.get_game(TestValues.GAME_ID)
 
-    assert result.labels == cfg.LABELS
+    assert result.labels == TestValues.LABELS
     # Datetime assertion can't be done due to millisec differents
 
 
@@ -140,7 +142,7 @@ def test_query_equals_insert_players():
         result = models.get_player(TestValues.PLAYER_ID)
 
     assert result.game_id == TestValues.GAME_ID
-    assert result.state == cfg.STATE
+    assert result.state == TestValues.STATE
 
 
 def test_query_equals_insert_players():
@@ -151,75 +153,20 @@ def test_query_equals_insert_players():
         result = models.get_player(TestValues.PLAYER_ID)
 
     assert result.game_id == TestValues.GAME_ID
-    assert result.state == cfg.STATE
+    assert result.state == TestValues.STATE
 
-def test_check_player_2_in_mulitplayer():
+def test_delete_session_from_game():
     """
+       Adds player to game, players and mulitplayer. Then deletes and checks if success. 
     """
-    
-
-
-def test_get_daily_high_score_sorted():
-    """
-        Check that daily high score list is sorted.
-    """
-    # insert random data into db
+    game_id = uuid.uuid4().hex
+    player_id = uuid.uuid4().hex
     with api.app.app_context():
-        for i in range(5):
-            result = models.insert_into_scores(
-                "Test User",
-                10 + i,
-                datetime.date.today() - datetime.timedelta(days=i),
-            )
-            assert result
-
-    with api.app.app_context():
-        result = models.get_daily_high_score()
-    sorting_check_helper(result)
-
-
-def test_get_top_n_high_score_list_sorted():
-    """
-        Check that total high score list is sorted.
-    """
-    with api.app.app_context():
-        result = models.get_top_n_high_score_list(10)
-
-    sorting_check_helper(result)
-
-
-def sorting_check_helper(high_score_list):
-    """
-        Helper function for testing if a list of score is sorted by scores, descending.
-    """
-    prev_score = high_score_list[0]["score"]
-    for player in high_score_list[1:]:
-        assert player["score"] <= prev_score
-        prev_score = player["score"]
-
-
-def test_get_daily_high_score_structure():
-    """
-        Check that highscore data has correct attributes: score and name
-    """
-    with api.app.app_context():
-        result = models.get_daily_high_score()
-
-    for player in result:
-        assert "score" in player
-        assert "name" in player
-
-
-def test_get_top_n_high_score_list_structure():
-    """
-        Check that highscore data has correct attributes: score and name
-    """
-    with api.app.app_context():
-        result = models.get_top_n_high_score_list(10)
-
-    for player in result:
-        assert "score" in player
-        assert "name" in player
+        models.insert_into_games(game_id, TestValues.LABELS, TestValues.TODAY)
+        models.insert_into_players(player_id, game_id, "Waiting")
+        models.insert_into_mulitplayer(game_id, player_id, None)
+        result = models.delete_session_from_game(game_id)
+    assert result == "Record deleted."
 
 
 def test_get_iteration_name_is_string():
