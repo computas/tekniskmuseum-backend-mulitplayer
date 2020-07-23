@@ -32,7 +32,6 @@ def test_join_game_responds(client):
     print("joingame event: ", r)
 
 
-
 def test_classification_correct(client):
     """
         tests wether a player is able to join a game and submit a image
