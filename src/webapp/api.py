@@ -254,7 +254,7 @@ def allowed_file(image):
     height, width = pimg.size
     correct_res = (height >= 256) and (width >= 256)
 
-    is_png = 'png' in pimg
+    # is_png = 'png' in pimg
 
     image.seek(0)
 
