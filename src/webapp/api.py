@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
     This file contains all entry points for the API. The API will use
     Websockets for most of the communication, although an HTTP route to
