@@ -148,7 +148,7 @@ def handle_classify(data, image):
 
     game = models.get_game(game_id)
     labels = json.loads(game.labels)
-    
+
     if time_out:
         player = models.get_player(player_id)
         opponent = models.get_opponent(game_id, player_id)
@@ -159,6 +159,7 @@ def handle_classify(data, image):
                 game_id, opponent.player_id, 1, "Done"
             )
             emit("round_over", {"round_over": True}, room=game_id)
+        return
 
     correct_label = labels[game.session_num - 1]
 
@@ -172,8 +173,8 @@ def handle_classify(data, image):
         "hasWon": has_won,
     }
     emit("prediction", response)
-    
-    elif has_won:
+
+    if has_won:
         models.update_game_for_player(game_id, player_id, 0, "Done")
         opponent = models.get_opponent(game_id, player_id)
         opponent_done = opponent.state == "Done"
