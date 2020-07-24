@@ -29,7 +29,7 @@ logger = False
 if "IS_PRODUCTION" in os.environ:
     logger = True
 
-socketio = SocketIO(app, cors_allowed_origins="*", logger=logger,)
+socketio = SocketIO(app, cors_allowed_origins="*", logger=logger)
 app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 models.create_tables(app)
@@ -156,24 +156,23 @@ def handle_classify(data, image):
         "hasWon": has_won,
     }
     emit("prediction", response)
-
     if time_out:
         player = models.get_player(player_id)
-        opponent = models.get_opponent(player_id, game_id)
+        opponent = models.get_opponent(game_id, player_id)
         if player.state != "Done" or opponent.state != "Done":
-            models.update_game_for_player(player_id, game_id, 0, "Done")
+            models.update_game_for_player(game_id, player_id, 0, "Done")
             models.update_game_for_player(
-                opponent.player_id, game_id, 1, "Done"
+                game_id, opponent.player_id, 1, "Done"
             )
-            emit("round_over", room=game_id)
+            emit("round_over", {"round_over": True}, room=game_id)
 
     elif has_won:
-        models.update_game_for_player(player_id, game_id, 0, "Done")
+        models.update_game_for_player(game_id, player_id, 0, "Done")
         opponent = models.get_opponent(game_id, player_id)
         opponent_done = opponent.state == "Done"
 
         if opponent_done:
-            models.update_game_for_player(player_id, game_id, 1, "Done")
+            models.update_game_for_player(game_id, player_id, 1, "Done")
             emit("round_over", room=game_id)
 
 
@@ -262,7 +261,6 @@ def allowed_file(image):
     else:
         is_png = pimg
 
-    # print(is_png)
     image.seek(0)
 
     if not is_png or too_large or not correct_res:
