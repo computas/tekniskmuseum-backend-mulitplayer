@@ -1,4 +1,3 @@
-
 name: Lint - tekniskback-mp
 
 # Run the workflow on every pull-request
@@ -7,20 +6,36 @@ on:
 
 jobs:
   run-linter:
-   name: Run linter
-   runs-on: ubuntu-latest
-   
-   steps:
-    - name: Checkout out git repo
-      uses: actions/checkout@v2
+    name: Run linter
+    runs-on: ubuntu-latest
 
-    - name: Set up Python version
-      uses: actions/setup-python@v1
-      with:
-        python-version: '3.7'
+    steps:
+      - name: Checkout out git repo
+        uses: actions/checkout@v2
 
-    - name: Install dependencies
-      run: pip install flake8
+      - name: Set up Python version
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.7"
 
-    - name: Run linter
-      run: flake8
+      - name: Install dependencies
+        run: pip install flake8
+
+  run-tests:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out git repo
+        uses: actions/checkout@v2
+
+      - name: Set up Python version
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.7"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: cd src && python runTests.py --keys='${{ secrets.TEST_SETTINGS }}'

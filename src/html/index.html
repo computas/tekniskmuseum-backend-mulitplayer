@@ -9,8 +9,6 @@
 
 <body>
 
-<h1> Socket.IO playground </h1>
-
 <div>
     <label for="uriIn">URI:</label>
     <input type="text" id="uriIn" value="ws://localhost:5000">
@@ -80,6 +78,15 @@
     socket.on('get_label', (json_data) => {
         print(json_data);
     })
+
+    socket.on('getLabel', (json_data) => {
+        print(json_data);
+    })
+
+
+    socket.on('endGame', function (message) {
+        print("<b>Game ended: </b>" + message);
+    });
     
     function print(message) {
 	    document.getElementById("out").innerHTML += "<br>" + message;
