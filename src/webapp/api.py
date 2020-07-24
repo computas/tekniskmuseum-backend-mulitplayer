@@ -148,6 +148,7 @@ def handle_classify(data, image):
 
     game = models.get_game(game_id)
     labels = json.loads(game.labels)
+    time_out = time_left <= 0
 
     if time_out:
         player = models.get_player(player_id)
@@ -164,7 +165,6 @@ def handle_classify(data, image):
     correct_label = labels[game.session_num - 1]
 
     has_won = correct_label == best_guess and time_left > 0
-    time_out = time_left <= 0
 
     response = {
         "certainty": translate_probabilities(prob_kv),
