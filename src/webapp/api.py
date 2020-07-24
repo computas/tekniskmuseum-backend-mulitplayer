@@ -25,7 +25,7 @@ import datetime
 
 # Initialize app
 app = Flask(__name__)
-logger = False
+logger = True
 if "IS_PRODUCTION" in os.environ:
     logger = True
 
@@ -164,6 +164,7 @@ def handle_classify(data, image):
         player = models.get_player(player_id)
         opponent = models.get_opponent(game_id, player_id)
         if player.state != "Done" or opponent.state != "Done":
+
             models.update_game_for_player(game_id, player_id, 0, "Done")
             models.update_game_for_player(
                 game_id, opponent.player_id, 1, "Done"
