@@ -9,9 +9,11 @@
 
 <body>
 
+<h1>Socket.IO Playground</h1>
+
 <div>
     <label for="uriIn">URI:</label>
-    <input type="text" id="uriIn" value="ws://localhost:5000">
+    <input type="text" id="uriIn" value="ws://localhost:8000">
     <button onclick="connectToHost()">Connect</button>
 </div>
 
@@ -96,7 +98,7 @@
         var input = document.getElementById("in").value;
         var eventName = document.getElementById("event").value;
         var files = document.getElementById("image").files
-        if (files.len < 1) {
+        if (files.length < 1) {
             socket.emit(eventName, input);
         } else {
             socket.emit(eventName, input, files[0]);
