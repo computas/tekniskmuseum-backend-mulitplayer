@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
     This file contains all entry points for the API. The API will use
     Websockets for most of the communication, although an HTTP route to
@@ -6,7 +7,7 @@
 """
 from customvision.classifier import Classifier
 from werkzeug import exceptions as excp
-from flask_socketio import SocketIO, emit, send, join_room
+from flask_socketio import SocketIO, emit, send, join_room, close_room
 from flask import request
 from flask import Flask
 from base64 import decodestring, decodebytes
@@ -132,6 +133,7 @@ def handle_classify(data, image):
                image: binary string with the image data
     """
     image_stream = BytesIO(image)
+
     allowed_file(image_stream)
 
     prob_kv, best_guess = classifier.predict_image(image_stream)
@@ -142,7 +144,7 @@ def handle_classify(data, image):
 
     game = models.get_game(game_id)
     labels = json.loads(game.labels)
-    correct_label = labels[game.session_num]
+    correct_label = labels[game.session_num - 1]
 
     has_won = correct_label == best_guess and time_left > 0
     time_out = time_left <= 0
@@ -252,13 +254,16 @@ def allowed_file(image):
     # Ensure the file has correct resolution
     image.seek(0)
     pimg = Image.open(image)
-
-    is_png = pimg.format == "PNG"
-
     height, width = pimg.size
     correct_res = (height >= 256) and (width >= 256)
 
+    if str(type(pimg)) == "JpegImageFile":
+        is_png = pimg.format == "PNG"
+    else:
+        is_png = pimg
+
+    # print(is_png)
     image.seek(0)
 
-    if is_png or too_large or not correct_res:
+    if not is_png or too_large or not correct_res:
         raise excp.UnsupportedMediaType("Wrong image format")
