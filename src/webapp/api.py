@@ -105,10 +105,10 @@ def handle_joinGame(json_data):
     state_data = {"ready": is_ready}
     join_room(game_id)
     # Emit message with player-state to each player triggering the event
-    emit("joinGame", data, sid=player_id)
+    emit("joinGame", json.dumps(data), sid=player_id)
     # Emit message with game-state to both players each time a player
     # triggers the event
-    emit("joinGame", state_data, room=game_id)
+    emit("joinGame", json.dumps(state_data), room=game_id)
 
 
 @socketio.on("getLabel")
