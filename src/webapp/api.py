@@ -116,8 +116,14 @@ def handle_getLabel(json_data):
     """
         Event for providing both players with a new label.
     """
+    player_id = request.sid
     data = json.loads(json_data)
     game_id = data["game_id"]
+
+    opponent = models.get_opponent(game_id, player_id)
+    models.update_game_for_player(game_id, player_id, 0, "Ready")
+    models.update_game_for_player(game_id, opponent.player_id, 0, "Ready")
+
     label = json.loads(get_label(game_id))
     emit("getLabel", json.dumps(label), room=game_id)
 
@@ -162,7 +168,7 @@ def handle_classify(data, image):
             models.update_game_for_player(
                 game_id, opponent.player_id, 1, "Done"
             )
-            emit("round_over", room=game_id)
+            emit("round_over", {"round_over": True}, room=game_id)
 
     elif has_won:
         models.update_game_for_player(player_id, game_id, 0, "Done")
@@ -171,7 +177,7 @@ def handle_classify(data, image):
 
         if opponent_done:
             models.update_game_for_player(game_id, player_id, 1, "Done")
-            emit("round_over", room=game_id)
+            emit("round_over", {"round_over": True}, room=game_id)
 
 
 @socketio.on("endGame")
