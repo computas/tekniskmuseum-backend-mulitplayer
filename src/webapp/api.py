@@ -189,12 +189,16 @@ def handle_endGame(json_data):
     game_id = data["game_id"]
     score_player = data["score"]
     player_id = data["player_id"]
-    name_player = data["name"]
     if models.get_game(game_id).session_num != setup.NUM_GAMES + 1:
         raise excp.BadRequest("Game not finished")
     # Insert score information into db
+<<<<<<< HEAD
     models.insert_into_scores(name_player, score_player, date)
     # Create a list containing player data which is sent out to opponent
+=======
+    models.insert_into_scores(None, score_player, date)
+    # Create a list containing player data which is sent out to both players
+>>>>>>> dc609da37f5bd37b8bbad2ffb2a9333737ba1fcc
     return_data = {"score": score_player, "playerId": player_id}
     # Retrieve the opponent (client) to pass on the score to
     opponent = models.get_opponent(game_id, player_id)
