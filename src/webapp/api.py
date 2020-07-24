@@ -143,7 +143,9 @@ def handle_classify(data, image):
     game = models.get_game(game_id)
     labels = json.loads(game.labels)
     correct_label = labels[game.session_num - 1]
+    import pdb
 
+    pdb.set_trace()
     has_won = correct_label == best_guess and time_left > 0
     time_out = time_left <= 0
 
@@ -161,12 +163,12 @@ def handle_classify(data, image):
         if player.state != "Done" or opponent.state != "Done":
             models.update_game_for_player(game_id, player_id, 0, "Done")
             models.update_game_for_player(
-                opponent.player_id, game_id, 1, "Done"
+                game_id, opponent.player_id, 1, "Done"
             )
             emit("round_over", room=game_id)
 
     elif has_won:
-        models.update_game_for_player(player_id, game_id, 0, "Done")
+        models.update_game_for_player(game_id, player_id, 0, "Done")
         opponent = models.get_opponent(game_id, player_id)
         opponent_done = opponent.state == "Done"
 
