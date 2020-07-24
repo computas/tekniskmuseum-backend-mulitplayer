@@ -157,9 +157,9 @@ def handle_classify(data, image):
 
     if time_out:
         player = models.get_player(player_id)
-        opponent = models.get_opponent(player_id, game_id)
+        opponent = models.get_opponent(game_id, player_id)
         if player.state != "Done" or opponent.state != "Done":
-            models.update_game_for_player(player_id, game_id, 0, "Done")
+            models.update_game_for_player(game_id, player_id, 0, "Done")
             models.update_game_for_player(
                 opponent.player_id, game_id, 1, "Done"
             )
