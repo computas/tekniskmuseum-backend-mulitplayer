@@ -12,7 +12,6 @@ from pytest import raises
 from werkzeug import exceptions as excp
 
 
-
 class TestValues:
     PLAYER_ID = uuid.uuid4().hex
     PLAYER_2 = uuid.uuid4().hex
@@ -64,13 +63,14 @@ def test_insert_into_players():
 
     assert result
 
+
 def test_insert_into_mulitplayer():
     """
         Check that record exists in MulitPlayer after inserting.
     """
     with api.app.app_context():
-        result = models.insert_into_mulitplayer(TestValues.GAME_ID,
-            TestValues.PLAYER_ID, TestValues.PLAYER_2
+        result = models.insert_into_mulitplayer(
+            TestValues.GAME_ID, TestValues.PLAYER_ID, TestValues.PLAYER_2
         )
 
     assert result
@@ -145,19 +145,9 @@ def test_query_equals_insert_players():
     assert result.state == TestValues.STATE
 
 
-def test_query_equals_insert_players():
-    """
-        Check that inserted record is the same as record catched by query.
-    """
-    with api.app.app_context():
-        result = models.get_player(TestValues.PLAYER_ID)
-
-    assert result.game_id == TestValues.GAME_ID
-    assert result.state == TestValues.STATE
-
 def test_delete_session_from_game():
     """
-       Adds player to game, players and mulitplayer. Then deletes and checks if success. 
+        Adds player to game, players and mulitplayer. Then deletes and checks if success.
     """
     game_id = uuid.uuid4().hex
     player_id = uuid.uuid4().hex
