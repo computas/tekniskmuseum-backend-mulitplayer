@@ -162,7 +162,7 @@ def handle_classify(data, image):
             models.update_game_for_player(
                 game_id, opponent.player_id, 1, "Done"
             )
-            emit("round_over", {"round_over": True}, room=game_id)
+            emit("round_over", room=game_id)
 
     elif has_won:
         models.update_game_for_player(player_id, game_id, 0, "Done")
