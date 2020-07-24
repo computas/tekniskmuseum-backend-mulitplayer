@@ -25,7 +25,7 @@ import datetime
 
 # Initialize app
 app = Flask(__name__)
-logger = False
+logger = True
 if "IS_PRODUCTION" in os.environ:
     logger = True
 
@@ -105,10 +105,10 @@ def handle_joinGame(json_data):
     state_data = {"ready": is_ready}
     join_room(game_id)
     # Emit message with player-state to each player triggering the event
-    emit("joinGame", json.dumps(data), sid=player_id)
+    emit("joinGame", data, sid=player_id)
     # Emit message with game-state to both players each time a player
     # triggers the event
-    emit("joinGame", json.dumps(state_data), room=game_id)
+    emit("joinGame", state_data, room=game_id)
 
 
 @socketio.on("getLabel")
@@ -116,8 +116,14 @@ def handle_getLabel(json_data):
     """
         Event for providing both players with a new label.
     """
+    player_id = request.sid
     data = json.loads(json_data)
     game_id = data["game_id"]
+
+    opponent = models.get_opponent(game_id, player_id)
+    models.update_game_for_player(game_id, player_id, 0, "Ready")
+    models.update_game_for_player(game_id, opponent.player_id, 0, "Ready")
+
     label = json.loads(get_label(game_id))
     emit("getLabel", json.dumps(label), room=game_id)
 
@@ -142,10 +148,23 @@ def handle_classify(data, image):
 
     game = models.get_game(game_id)
     labels = json.loads(game.labels)
+    time_out = time_left <= 0
+
+    if time_out:
+        player = models.get_player(player_id)
+        opponent = models.get_opponent(game_id, player_id)
+        if player.state != "Done" or opponent.state != "Done":
+
+            models.update_game_for_player(game_id, player_id, 0, "Done")
+            models.update_game_for_player(
+                game_id, opponent.player_id, 1, "Done"
+            )
+            emit("round_over", {"round_over": True}, room=game_id)
+        return
+
     correct_label = labels[game.session_num - 1]
 
     has_won = correct_label == best_guess and time_left > 0
-    time_out = time_left <= 0
 
     response = {
         "certainty": translate_probabilities(prob_kv),
@@ -154,24 +173,15 @@ def handle_classify(data, image):
         "hasWon": has_won,
     }
     emit("prediction", response)
-    if time_out:
-        player = models.get_player(player_id)
-        opponent = models.get_opponent(game_id, player_id)
-        if player.state != "Done" or opponent.state != "Done":
-            models.update_game_for_player(game_id, player_id, 0, "Done")
-            models.update_game_for_player(
-                game_id, opponent.player_id, 1, "Done"
-            )
-            emit("round_over", {"round_over": True}, room=game_id)
 
-    elif has_won:
+    if has_won:
         models.update_game_for_player(game_id, player_id, 0, "Done")
         opponent = models.get_opponent(game_id, player_id)
         opponent_done = opponent.state == "Done"
 
         if opponent_done:
             models.update_game_for_player(game_id, player_id, 1, "Done")
-            emit("round_over", room=game_id)
+            emit("round_over", {"round_over": True}, room=game_id)
 
 
 @socketio.on("endGame")
