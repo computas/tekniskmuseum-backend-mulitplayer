@@ -9,80 +9,104 @@
 
 <body>
 
-    <h1> Socket.IO playground </h1>
-    <div>
-        <h3>Output:</h3>
-        <p id="out"></p>
-    </div>
+<h1>Socket.IO Playground</h1>
 
-    <div>
-        <label for="event">Event:</label>
-        <input type="text" id="event">
-        <label for="in">Data:</label>
-        <input type="text" id="in">
-        <button onclick="sendMessage()">Send</button>
-    </div>
+<div>
+    <label for="uriIn">URI:</label>
+    <input type="text" id="uriIn" value="ws://localhost:8000">
+    <button onclick="connectToHost()">Connect</button>
+</div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"
-        integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
-    <script type="text/javascript" charset="utf-8">
+<div>
+  <h3>Output:</h3>
+  <p id="out"></p>
+</div>
+
+<div id="eventData">
+    <label for="event">Event:</label>
+    <input type="text" id="event">
+
+    <label for="in">JSON:</label>
+    <input type="text" id="in">
+
+    <label for="image">Image:</label>
+    <input type="file" id="image">
+
+    <button onclick="emitEvent()">Send</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+
+    var socket = null;
+    connectToHost();
+
+    function connectToHost() {
         // Connect to WS with Socket.IO
-        const socket = io('ws://localhost:8000',
+        var uri = document.getElementById("uriIn").value;
+        socket = io(uri, 
             {
                 transports: ['websocket']
             }
         );
+    }
 
-        // Event handlers
-        socket.on('connect', function () {
-            socket.emit('my event', { data: 'I\'m connected!' });
-            console.log(socket);
-            print("<b>connected to host: </b>" + socket.io.uri);
-        });
+    // Event handlers
+    socket.on('connect', function () {
+        socket.emit('my event', { data: 'I\'m connected!' });
+        print("<b>connected to host: </b>" + socket.io.uri);
+    });
+    
+    socket.on('message', function(message) {
+        var output = document.createTextNode("message received: " + message);
+    	print("<b>message received</b>: " + message);
+    });
+
+    socket.on('connect_error', function (error) {
+        print("<b>connection lost: </b>" + error.message);
+    });
+    
+    
+    socket.on('player_info', (json_data) => {
+        print(json_data);
+    });
+    
+    
+    socket.on('state_info', (json_data) => {
+        print(json_data);
+    });
+    
+    
+    socket.on('get_label', (json_data) => {
+        print(json_data);
+    })
+
+    socket.on('getLabel', (json_data) => {
+        print(json_data);
+    })
 
 
-        socket.on('message', function (message) {
-            var output = document.createTextNode("message received: " + message);
-            print("<b>message received</b>: " + message);
-        });
+    socket.on('endGame', function (message) {
+        print("<b>Game ended: </b>" + message);
+    });
+    
+    function print(message) {
+	    document.getElementById("out").innerHTML += "<br>" + message;
+    }
 
-
-        socket.on('connect_error', function (error) {
-            print("<b>connection lost: </b>" + error.message);
-        });
-
-
-        socket.on('joinGame', (json_data) => {
-            print(json_data);
-        });
-
-
-        socket.on('player_disconnected', (json_data) => {
-            print(json_data);
-        });
-
-
-        socket.on('getLabel', (json_data) => {
-            print(json_data);
-        })
-
-
-        socket.on('endGame', function (message) {
-            print("<b>Game ended: </b>" + message);
-        });
-
-        function print(message) {
-            document.getElementById("out").innerHTML += "<br>" + message;
-        }
-
-        function sendMessage() {
-            var input = document.getElementById("in").value;
-            var eventName = document.getElementById("event").value;
+    function emitEvent() {
+        var input = document.getElementById("in").value;
+        var eventName = document.getElementById("event").value;
+        var files = document.getElementById("image").files
+        if (files.length < 1) {
             socket.emit(eventName, input);
-            print("<b>message sent: </b>" + input);
-            document.getElementById("in").value = "";
+        } else {
+            socket.emit(eventName, input, files[0]);
         }
-    </script>
+	    print("<b>message sent: </b>" + input);
+    }
+    
+</script>
 
 </body>
 

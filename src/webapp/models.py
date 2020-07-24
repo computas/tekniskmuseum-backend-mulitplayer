@@ -186,7 +186,12 @@ def insert_into_players(player_id, game_id, state):
 
 def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
     """
-        Docstring.
+        Insert values into MulitPlayer table.
+
+        Parameters:
+        game_id: random uuid.uuid4().hex
+        player_1: random uuid.uuid4().hex
+        player_2: random uuid.uuid4().hex
     """
     player2_is_str_or_none = (
         isinstance(player_2_id, str) or player_2_id is None
