@@ -104,7 +104,7 @@ def test_player_can_finish_game(client):
     r2 = ws_client2.get_received()
     game_id = r1[0]["args"][0]["game_id"]
     print(f"game_id: {game_id}")
-    for i in range(3):
+    for i in range(1):
         ws_client1.emit("getLabel", game_id)
         ws_client2.emit("getLabel", game_id)
 
@@ -120,7 +120,7 @@ def test_player_can_finish_game(client):
                 stream=tmp, filename=HARAMBE_PATH, content_type=content_type
             )
 
-            data = {"game_id": game_id, "time_left": 1}
+            data = {"game_id": game_id, "time_left": 0}
 
             ws_client1.emit("classify", data, image.stream.read())
             image.seek(0)
@@ -131,6 +131,6 @@ def test_player_can_finish_game(client):
 
         print(r1)
         print(r2)
-        assert not r1[0]["args"][0]["hasWon"]
-        assert not r2[0]["args"][0]["hasWon"]
+        assert r1[0]["name"] == "round_over"
+        assert r2[0]["name"] == "round_over"
 
