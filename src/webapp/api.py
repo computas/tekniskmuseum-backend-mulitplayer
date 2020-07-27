@@ -53,8 +53,13 @@ def disconnect():
     player = models.get_player(player_id)
     game = models.get_game(player.game_id)
     data = {"player_disconnected": True}
-    emit("player_disconnected", json.dumps(data), room=game.game_id)
-    models.delete_session_from_game(game.game_id)
+    models.update_game_for_player(game.game_id, player_id, 0, "Disconnected")
+    opponent = opponent.get_opponent(game.game_id, player_id)
+    if opponenet.state == "Disconnected":
+        emit("player_disconnected", json.dumps(data), room=player_id)
+        models.delete_session_from_game(game.game_id)
+    else:
+        emit("player_disconnected", json.dumps(data), room=game.game_id)
     print("=== client disconnected ===")
 
 
