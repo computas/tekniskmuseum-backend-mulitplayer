@@ -303,9 +303,6 @@ def white_image_data(label, time_left, game_id, player_id):
     if time_left > 0:
         game_state = "Playing"
     else:
-        models.update_game_for_player(
-            game_id, player_id, 1, "Done"
-        )
         game_state = "Done"
 
     data = {
