@@ -56,10 +56,10 @@ def disconnect():
     models.update_game_for_player(game.game_id, player_id, 0, "Disconnected")
     opponent = opponent.get_opponent(game.game_id, player_id)
     if opponenet.state == "Disconnected":
-        emit("player_disconnected", json.dumps(data), room=player_id)
+        emit("playerDisconnected", json.dumps(data), room=player_id)
         models.delete_session_from_game(game.game_id)
     else:
-        emit("player_disconnected", json.dumps(data), room=game.game_id)
+        emit("playerDisconnected", json.dumps(data), room=game.game_id)
     print("=== client disconnected ===")
 
 
@@ -164,7 +164,7 @@ def handle_classify(data, image):
             models.update_game_for_player(
                 game_id, opponent.player_id, 1, "Done"
             )
-            emit("round_over", {"round_over": True}, room=game_id)
+            emit("roundOver", {"round_over": True}, room=game_id)
         return
 
     correct_label = labels[game.session_num - 1]
@@ -186,7 +186,7 @@ def handle_classify(data, image):
 
         if opponent_done:
             models.update_game_for_player(game_id, player_id, 1, "Done")
-            emit("round_over", {"round_over": True}, room=game_id)
+            emit("roundOver", {"round_over": True}, room=game_id)
 
 
 @socketio.on("endGame")
