@@ -260,12 +260,12 @@ def allowed_file(image):
         Check if image satisfies the constraints of Custom Vision.
     """
     # Ensure the file isn't too large
-    too_large = len(image.read()) > 4000000
+    too_large = len(image.read()) > setup.MAX_IMAGE_SIZE
     # Ensure the file has correct resolution
     image.seek(0)
     pimg = Image.open(image)
     height, width = pimg.size
-    correct_res = (height >= 256) and (width >= 256)
+    correct_res = (height >= 256) and (width >= setup.MIN_RESOLUTION)
 
     if str(type(pimg)) == "JpegImageFile":
         is_png = pimg.format == "PNG"
