@@ -56,7 +56,7 @@ def disconnect():
     data = {"player_disconnected": True}
     models.update_game_for_player(game.game_id, player_id, 0, "Disconnected")
     opponent = models.get_opponent(game.game_id, player_id)
-    if opponenet.state == "Disconnected":
+    if opponent.state == "Disconnected":
         emit("playerDisconnected", json.dumps(data), room=player_id)
         models.delete_session_from_game(game.game_id)
     else:
@@ -156,7 +156,7 @@ def handle_classify(data, image):
     # Check if the image hasn't been drawn on
     bytes_img = Image.open(image_stream)
     if white_image(bytes_img):
-        response = white_image_data(correct_label, time_left, player.game_id, player_id)
+        response = white_image_data(correct_label, time_left, game_id, player_id)
         emit("prediction", response)
         return
 
