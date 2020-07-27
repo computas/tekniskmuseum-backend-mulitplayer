@@ -157,8 +157,9 @@ def handle_classify(data, image):
     bytes_img = Image.open(image_stream)
     if white_image(bytes_img):
         response = white_image_data(correct_label, time_left, game_id, player_id)
-        emit("prediction", response)
-        return
+        if response["gameState"] != "Done":
+            emit("prediction", response)
+            return
 
     image_stream.seek(0)
     prob_kv, best_guess = classifier.predict_image(image_stream)
