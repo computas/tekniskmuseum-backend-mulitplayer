@@ -206,10 +206,7 @@ def handle_endGame(json_data):
     return_data = {"score": score_player, "playerId": player_id}
     # Retrieve the opponent (client) to pass on the score to
     opponent = models.get_opponent(game_id, player_id)
-    emit("endGame", json.dumps(return_data), room=game_id)
-    models.delete_session_from_game(game_id)
-    # Remove client from room and delete room
-    close_room(player_id)
+    emit("endGame", json.dumps(return_data), room=opponent.player_id)
     models.delete_old_games()
 
 

@@ -133,4 +133,3 @@ def test_player_can_finish_game(client):
         print(r2)
         assert not r1[0]["args"][0]["hasWon"]
         assert not r2[0]["args"][0]["hasWon"]
-
