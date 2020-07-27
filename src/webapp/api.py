@@ -145,14 +145,24 @@ def handle_classify(data, image):
 
     allowed_file(image_stream)
 
-    prob_kv, best_guess = classifier.predict_image(image_stream)
-
     player_id = request.sid
     game_id = data["game_id"]
     time_left = data["time_left"]
 
     game = models.get_game(game_id)
     labels = json.loads(game.labels)
+    correct_label = labels[game.session_num - 1]
+
+    # Check if the image hasn't been drawn on
+    bytes_img = Image.open(BytesIO(image.stream.read()))
+    image.seek(0)
+    if white_image(bytes_img):
+        response = white_image_data(label, time_left, player.game_id, player_id)
+        emit("prediction", response)
+        return
+
+    prob_kv, best_guess = classifier.predict_image(image_stream)
+
     time_out = time_left <= 0
 
     if time_out:
@@ -166,8 +176,6 @@ def handle_classify(data, image):
             )
             emit("roundOver", {"round_over": True}, room=game_id)
         return
-
-    correct_label = labels[game.session_num - 1]
 
     has_won = correct_label == best_guess and time_left > 0
 
@@ -264,8 +272,7 @@ def allowed_file(image):
     # Ensure the file has correct resolution
     image.seek(0)
     pimg = Image.open(image)
-    height, width = pimg.size
-    correct_res = (height >= 256) and (width >= setup.MIN_RESOLUTION)
+    correct_res = (height >= setup.MIN_RESOLUTION) and (width >= setup.MIN_RESOLUTION)
 
     if str(type(pimg)) == "JpegImageFile":
         is_png = pimg.format == "PNG"
@@ -276,3 +283,36 @@ def allowed_file(image):
 
     if not is_png or too_large or not correct_res:
         raise excp.UnsupportedMediaType("Wrong image format")
+
+
+def white_image(image):
+    """
+        Check if the image provided is completely white.
+    """
+    if not PIL.ImageChops.invert(image).getbbox():
+        return True
+    else:
+        return False
+
+
+def white_image_data(label, time_left, game_id, player_id):
+    """
+        Generate the json data to be returned to the client when a completely
+        white image has been submitted for classification.
+    """
+    if time_left > 0:
+        game_state = "Playing"
+    else:
+        models.update_game_for_player(
+            game_id, player_id, 1, "Done"
+        )
+        game_state = "Done"
+
+    data = {
+        "certainty": 1.0,
+        "guess": setup.WHITE_IMAGE_GUESS,
+        "correctLabel": label,
+        "hasWon": False,
+        "gameState": game_state,
+    }
+    return data
