@@ -272,6 +272,7 @@ def allowed_file(image):
     # Ensure the file has correct resolution
     image.seek(0)
     pimg = Image.open(image)
+    height, width = pimg.size
     correct_res = (height >= setup.MIN_RESOLUTION) and (width >= setup.MIN_RESOLUTION)
 
     if str(type(pimg)) == "JpegImageFile":
