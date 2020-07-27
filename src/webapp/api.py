@@ -12,6 +12,7 @@ from flask import request
 from flask import Flask
 from base64 import decodestring, decodebytes
 from PIL import Image
+from PIL import ImageChops
 from io import BytesIO
 from webapp import models
 from utilities.exceptions import UserError
@@ -53,8 +54,13 @@ def disconnect():
     player = models.get_player(player_id)
     game = models.get_game(player.game_id)
     data = {"player_disconnected": True}
-    emit("player_disconnected", json.dumps(data), room=game.game_id)
-    models.delete_session_from_game(game.game_id)
+    models.update_game_for_player(game.game_id, player_id, 0, "Disconnected")
+    opponent = models.get_opponent(game.game_id, player_id)
+    if opponent.state == "Disconnected":
+        emit("playerDisconnected", json.dumps(data), room=player_id)
+        models.delete_session_from_game(game.game_id)
+    else:
+        emit("playerDisconnected", json.dumps(data), room=game.game_id)
     print("=== client disconnected ===")
 
 
@@ -140,14 +146,23 @@ def handle_classify(data, image):
 
     allowed_file(image_stream)
 
-    prob_kv, best_guess = classifier.predict_image(image_stream)
-
     player_id = request.sid
     game_id = data["game_id"]
     time_left = data["time_left"]
 
     game = models.get_game(game_id)
     labels = json.loads(game.labels)
+    correct_label = labels[game.session_num - 1]
+    # Check if the image hasn't been drawn on
+    bytes_img = Image.open(image_stream)
+    if white_image(bytes_img):
+        response = white_image_data(correct_label, time_left, game_id, player_id)
+        if response["gameState"] != "Done":
+            emit("prediction", response)
+            return
+
+    image_stream.seek(0)
+    prob_kv, best_guess = classifier.predict_image(image_stream)
     time_out = time_left <= 0
 
     if time_out:
@@ -159,10 +174,8 @@ def handle_classify(data, image):
             models.update_game_for_player(
                 game_id, opponent.player_id, 1, "Done"
             )
-            emit("round_over", {"round_over": True}, room=game_id)
+            emit("roundOver", {"round_over": True}, room=game_id)
         return
-
-    correct_label = labels[game.session_num - 1]
 
     has_won = correct_label == best_guess and time_left > 0
 
@@ -181,7 +194,7 @@ def handle_classify(data, image):
 
         if opponent_done:
             models.update_game_for_player(game_id, player_id, 1, "Done")
-            emit("round_over", {"round_over": True}, room=game_id)
+            emit("roundOver", {"round_over": True}, room=game_id)
 
 
 @socketio.on("endGame")
@@ -206,10 +219,7 @@ def handle_endGame(json_data):
     return_data = {"score": score_player, "playerId": player_id}
     # Retrieve the opponent (client) to pass on the score to
     opponent = models.get_opponent(game_id, player_id)
-    emit("endGame", json.dumps(return_data), room=game_id)
-    models.delete_session_from_game(game_id)
-    # Remove client from room and delete room
-    close_room(player_id)
+    emit("endGame", json.dumps(return_data), room=opponent.player_id)
     models.delete_old_games()
 
 
@@ -258,12 +268,12 @@ def allowed_file(image):
         Check if image satisfies the constraints of Custom Vision.
     """
     # Ensure the file isn't too large
-    too_large = len(image.read()) > 4000000
+    too_large = len(image.read()) > setup.MAX_IMAGE_SIZE
     # Ensure the file has correct resolution
     image.seek(0)
     pimg = Image.open(image)
     height, width = pimg.size
-    correct_res = (height >= 256) and (width >= 256)
+    correct_res = (height >= setup.MIN_RESOLUTION) and (width >= setup.MIN_RESOLUTION)
 
     if str(type(pimg)) == "JpegImageFile":
         is_png = pimg.format == "PNG"
@@ -274,3 +284,33 @@ def allowed_file(image):
 
     if not is_png or too_large or not correct_res:
         raise excp.UnsupportedMediaType("Wrong image format")
+
+
+def white_image(image):
+    """
+        Check if the image provided is completely white.
+    """
+    if not ImageChops.invert(image).getbbox():
+        return True
+    else:
+        return False
+
+
+def white_image_data(label, time_left, game_id, player_id):
+    """
+        Generate the json data to be returned to the client when a completely
+        white image has been submitted for classification.
+    """
+    if time_left > 0:
+        game_state = "Playing"
+    else:
+        game_state = "Done"
+
+    data = {
+        "certainty": 1.0,
+        "guess": setup.WHITE_IMAGE_GUESS,
+        "correctLabel": label,
+        "hasWon": False,
+        "gameState": game_state,
+    }
+    return data

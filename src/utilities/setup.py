@@ -13,6 +13,13 @@ CERTAINTY_THRESHOLD = 0.5
 CV_MAX_ITERATIONS = 10
 # can't upload more than 64 images at a time, if more
 CV_MAX_IMAGES = 64
+# The guess provided to the user when the image is blank
+WHITE_IMAGE_GUESS = "blank image"
+# Authorization cookie expiration time in minutes
+SESSION_EXPIRATION_TIME = 10
+# Maximum file size and minimum resolution for CV classification
+MAX_IMAGE_SIZE = 4000000
+MIN_RESOLUTION = 256
 
 
 class Flask_config:
