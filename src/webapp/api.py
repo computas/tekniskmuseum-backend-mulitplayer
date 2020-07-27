@@ -12,6 +12,7 @@ from flask import request
 from flask import Flask
 from base64 import decodestring, decodebytes
 from PIL import Image
+from PIL import ImageChops
 from io import BytesIO
 from webapp import models
 from utilities.exceptions import UserError
@@ -152,17 +153,15 @@ def handle_classify(data, image):
     game = models.get_game(game_id)
     labels = json.loads(game.labels)
     correct_label = labels[game.session_num - 1]
-
     # Check if the image hasn't been drawn on
-    bytes_img = Image.open(BytesIO(image.stream.read()))
-    image.seek(0)
+    bytes_img = Image.open(image_stream)
     if white_image(bytes_img):
         response = white_image_data(label, time_left, player.game_id, player_id)
         emit("prediction", response)
         return
 
+    image_stream.seek(0)
     prob_kv, best_guess = classifier.predict_image(image_stream)
-
     time_out = time_left <= 0
 
     if time_out:
@@ -290,7 +289,7 @@ def white_image(image):
     """
         Check if the image provided is completely white.
     """
-    if not PIL.ImageChops.invert(image).getbbox():
+    if not ImageChops.invert(image).getbbox():
         return True
     else:
         return False
