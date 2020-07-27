@@ -156,7 +156,7 @@ def handle_classify(data, image):
     # Check if the image hasn't been drawn on
     bytes_img = Image.open(image_stream)
     if white_image(bytes_img):
-        response = white_image_data(label, time_left, player.game_id, player_id)
+        response = white_image_data(correct_label, time_left, player.game_id, player_id)
         emit("prediction", response)
         return
 
