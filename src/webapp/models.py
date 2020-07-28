@@ -7,7 +7,7 @@ import csv
 import os
 import random
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug import exceptions as excp
+from utilities.exceptions import UserError
 
 db = SQLAlchemy()
 
@@ -123,7 +123,7 @@ def insert_into_games(game_id, labels, date):
         except Exception as e:
             raise Exception("Could not insert into games :" + str(e))
     else:
-        raise excp.BadRequest(
+        raise UserError(
             "game_id has to be string, labels has to be string "
             "and date has to be datetime.datetime."
         )
@@ -153,7 +153,7 @@ def insert_into_scores(name, score, date):
         except Exception as e:
             raise Exception("Could not insert into scores: " + str(e))
     else:
-        raise excp.BadRequest(
+        raise UserError(
             "Name has to be string, score can be int or "
             "float and date has to be datetime.date."
         )
@@ -181,7 +181,7 @@ def insert_into_players(player_id, game_id, state):
         except Exception as e:
             raise Exception("Could not insert into games: " + str(e))
     else:
-        raise excp.BadRequest("All params has to be string.")
+        raise UserError("All params has to be string.")
 
 
 def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
@@ -211,7 +211,7 @@ def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
         except Exception as e:
             raise Exception("Could not insert into mulitplayer: " + str(e))
     else:
-        raise excp.BadRequest("All params has to be string.")
+        raise UserError("All params has to be string.")
 
 
 def check_player_2_in_mulitplayer(player_id):
@@ -223,7 +223,7 @@ def check_player_2_in_mulitplayer(player_id):
     game = MulitPlayer.query.filter_by(player_2=None).first()
     if game is not None:
         if game.player_1 == player_id:
-            raise excp.BadRequest("you can't join a game with yourself")
+            raise UserError("you can't join a game with yourself")
         return game.game_id
 
     return None
@@ -235,7 +235,7 @@ def get_game(game_id):
     """
     game = Games.query.get(game_id)
     if game is None:
-        raise excp.BadRequest("game_id invalid or expired")
+        raise UserError("game_id invalid or expired")
 
     return game
 
@@ -246,7 +246,7 @@ def get_player(player_id):
     """
     player = Players.query.get(player_id)
     if player is None:
-        raise excp.BadRequest("player_id invalid or expired")
+        raise UserError("player_id invalid or expired")
 
     return player
 
@@ -257,7 +257,7 @@ def get_mulitplayer(game_id):
     """
     mp = MulitPlayer.query.get(game_id)
     if mp is None:
-        raise excp.BadRequest("game_id invalid or expired")
+        raise UserError("game_id invalid or expired")
 
     return mp
 
@@ -269,7 +269,7 @@ def get_opponent(game_id, player_id):
     mp = MulitPlayer.query.get(game_id)
     if mp is None:
         # Needs to be changed to socket error
-        raise excp.BadRequest("Token invalid or expired")
+        raise UserError("Token invalid or expired")
     elif mp.player_1 == player_id:
         return Players.query.get(mp.player_2)
     return Players.query.get(mp.player_1)
@@ -420,7 +420,7 @@ def insert_into_labels(english, norwegian):
         except Exception as e:
             raise Exception("Could not insert into Labels table: " + str(e))
     else:
-        raise excp.BadRequest("English and norwegian must be strings")
+        raise UserError("English and norwegian must be strings")
 
 
 def get_n_labels(n):
