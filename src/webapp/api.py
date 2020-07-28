@@ -6,7 +6,6 @@
     application is live.
 """
 from customvision.classifier import Classifier
-from werkzeug import exceptions as excp
 from flask_socketio import SocketIO, emit, send, join_room, close_room
 from flask import request
 from flask import Flask
@@ -283,7 +282,7 @@ def allowed_file(image):
     image.seek(0)
 
     if not is_png or too_large or not correct_res:
-        raise excp.UnsupportedMediaType("Wrong image format")
+        raise UserError("Wrong image format")
 
 
 def white_image(image):

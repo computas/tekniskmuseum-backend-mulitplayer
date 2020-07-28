@@ -9,7 +9,7 @@ import datetime
 from webapp import api
 from webapp import models
 from pytest import raises
-from werkzeug import exceptions as excp
+from utilities.exceptions import UserError
 
 
 class TestValues:
@@ -81,7 +81,7 @@ def test_illegal_parameter_games():
         Check that exception is raised when illegal arguments is passed
         into games table.
     """
-    with raises(excp.BadRequest):
+    with raises(UserError):
         models.insert_into_games(
             10, ["label1", "label2", "label3"], "date_time"
         )
@@ -92,7 +92,7 @@ def test_illegal_parameter_scores():
         Check that exception is raised when illegal arguments is passed
         into scores table.
     """
-    with raises(excp.BadRequest):
+    with raises(UserError):
         models.insert_into_scores(100, "score", "01.01.2020")
 
 
@@ -101,7 +101,7 @@ def test_illegal_parameter_labels():
         Check that exception is raised when illegal arguments is passed
         into games table.
     """
-    with raises(excp.BadRequest):
+    with raises(UserError):
         models.insert_into_labels(1, None)
 
 
@@ -110,7 +110,7 @@ def test_illegal_parameter_players():
         Check that exception is raised when illegal arguments is passed
         into player in game table.
     """
-    with raises(excp.BadRequest):
+    with raises(UserError):
         models.insert_into_players(100, 200, 11)
 
 
@@ -119,7 +119,7 @@ def test_illegal_parameter_mulitplayer():
         Check that exception is raised when illegal arguments is passed
         into player in MulitPlayer table.
     """
-    with raises(excp.BadRequest):
+    with raises(UserError):
         models.insert_into_mulitplayer(100, 200, 11)
 
 
