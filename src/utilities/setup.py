@@ -20,6 +20,9 @@ SESSION_EXPIRATION_TIME = 10
 # Maximum file size and minimum resolution for CV classification
 MAX_IMAGE_SIZE = 4000000
 MIN_RESOLUTION = 256
+# Container names
+CONTAINER_NAME_ORIGINAL = "oldimgcontainer"
+CONTAINER_NAME_NEW = "newimgcontainer"
 
 
 class Flask_config:
