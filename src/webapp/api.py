@@ -14,7 +14,6 @@ from PIL import Image
 from PIL import ImageChops
 from io import BytesIO
 from webapp import models
-from webapp import storage
 from utilities.exceptions import UserError
 from utilities import setup
 import logging
@@ -156,17 +155,13 @@ def handle_classify(data, image):
     # Check if the image hasn't been drawn on
     bytes_img = Image.open(image_stream)
     if white_image(bytes_img):
-        response = white_image_data(
-            correct_label, time_left, game_id, player_id
-        )
+        response = white_image_data(correct_label, time_left, game_id, player_id)
         if response["gameState"] != "Done":
             emit("prediction", response)
             return
 
     image_stream.seek(0)
-    certainty, best_guess = classifier.predict_image(image_stream)
-    best_certainty = certainty[best_guess]
-
+    prob_kv, best_guess = classifier.predict_image(image_stream)
     time_out = time_left <= 0
 
     if time_out:
@@ -179,14 +174,12 @@ def handle_classify(data, image):
                 game_id, opponent.player_id, 1, "Done"
             )
             emit("roundOver", {"round_over": True}, room=game_id)
-            # save image
-            storage.save_image(image, correct_label, best_certainty)
         return
 
     has_won = correct_label == best_guess and time_left > 0
 
     response = {
-        "certainty": translate_probabilities(certainty),
+        "certainty": translate_probabilities(prob_kv),
         "guess": models.to_norwegian(best_guess),
         "correctLabel": models.to_norwegian(correct_label),
         "hasWon": has_won,
@@ -201,9 +194,6 @@ def handle_classify(data, image):
         if opponent_done:
             models.update_game_for_player(game_id, player_id, 1, "Done")
             emit("roundOver", {"round_over": True}, room=game_id)
-
-        # save image
-        storage.save_image(image, correct_label, best_certainty)
 
 
 @socketio.on("endGame")
@@ -282,9 +272,7 @@ def allowed_file(image):
     image.seek(0)
     pimg = Image.open(image)
     height, width = pimg.size
-    correct_res = (height >= setup.MIN_RESOLUTION) and (
-        width >= setup.MIN_RESOLUTION
-    )
+    correct_res = (height >= setup.MIN_RESOLUTION) and (width >= setup.MIN_RESOLUTION)
 
     if str(type(pimg)) == "JpegImageFile":
         is_png = pimg.format == "PNG"
