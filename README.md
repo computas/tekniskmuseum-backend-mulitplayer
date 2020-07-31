@@ -1,13 +1,35 @@
 # **Teknisk Museum Back-End Multiplayer**
-_This repository contains source code and documentation for an API used to enable multiplayer gameplay in the project for Teknisk Museum. The API communicates with a frontend through the use of websockets to enable faster response time for the users._
+_This repository contains source code and documentation for an API used to enable multiplayer gameplay in the project for Teknisk Museum. The API communicates with a frontend through the use of websockets to enable faster response time and better synchronization for clients._
+
 ## **Usage**
-_Guide on how to use/run the program comes here!_
+The main entry point off the app is the bash script `startapp.sh`.
+Just runing the script with: `bash startapp.sh` will launch the app.
+The script accepts the following flags `bash startapp.sh <flag>`:
+
+| Flag          | Result                                            |
+|---------------|---------------------------------------------------|
+| -h, --help    | display options                                   |
+| -t, --test    | run PEP8 linter and unit tests                    |
+| -d, --debug   | run with development settings                     |
 
 ### **Development**
-_Guide on how to get started with development comes here!_
+* Clone repository.
+* Install python 3.7
+* Install the database [driver](https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15).
+* Install python requirements with pip: `pip install -r requirements.txt`.
+* Save the secret keys as a json object in: `src/config.json`.
+* Run script: `bash startapp.sh -d`to run the app with test database.
+* Use `bash startapp.sh` in production.
+
+### **Tests**
+#### Run the tests with the following command:
+* `bash startapp.sh -t`
 
 ### **Required Installation**
-_Guide to required installations comes here!_
+
+All python requirements should be included in `requirements.txt`, and can be installed by running
+* `pip install -r requirements.txt`
+
 
 ## **Conventions and Rules**
 
