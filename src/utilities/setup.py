@@ -1,6 +1,8 @@
 import sys
 import os
+from urllib import parse
 from utilities.keys import Keys
+from urllib import parse
 
 # number of players in overall high score top list
 TOP_N = 10
@@ -42,4 +44,4 @@ class Flask_config:
         con_str = Keys.get("DB_CONNECTION_STRING")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = con_str
+    SQLALCHEMY_DATABASE_URI = "mssql+pyodbc://%s" % con_str

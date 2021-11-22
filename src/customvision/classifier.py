@@ -2,6 +2,7 @@
 """
     Tools for interacting with Azure Custom Vision and Azure Blob Storage
 """
+import logging
 import uuid
 import time
 import sys
@@ -24,6 +25,7 @@ from utilities.keys import Keys
 from utilities import setup
 from webapp import models
 from webapp import api
+import requests
 
 
 class Classifier:
@@ -51,7 +53,7 @@ class Classifier:
         self.training_key = Keys.get("CV_TRAINING_KEY")
         self.base_img_url = Keys.get("BASE_BLOB_URL")
         self.prediction_resource_id = Keys.get("CV_PREDICTION_RESOURCE_ID")
-
+        print(self.prediction_key)
         self.prediction_credentials = ApiKeyCredentials(
             in_headers={"Prediction-key": self.prediction_key}
         )
@@ -79,7 +81,10 @@ class Classifier:
         ]
         # get the latest published iteration
         puplished_iterations.sort(key=lambda i: i.created)
-        self.iteration_name = puplished_iterations[-1].publish_name
+        if len(puplished_iterations) > 0:
+            self.iteration_name = puplished_iterations[-1].publish_name
+        else:
+            self.iteration_name = 'iteration-1'
         with api.app.app_context():
             models.update_iteration_name(self.iteration_name)
 
@@ -121,14 +126,41 @@ class Classifier:
         """
         with api.app.app_context():
             self.iteration_name = models.get_iteration_name()
+        print(self.project_id, self.iteration_name, img)
         res = self.predictor.classify_image_with_no_store(
             self.project_id, self.iteration_name, img
-        )
+        ) 
         # reset the file head such that it does not affect the state of the file handle
         img.seek(0)
         pred_kv = dict([(i.tag_name, i.probability) for i in res.predictions])
         best_guess = max(pred_kv, key=pred_kv.get)
         return pred_kv, best_guess
+
+    def predict_image_by_post(self, img) -> Dict[str, float]:
+        """
+            Predicts label(s) of Image read from URL.
+            ASSUMES:
+            -image of type .png
+            -image size less than 4MB
+            -image resolution at least 256x256 pixels
+
+            Parameters:
+            img_url: .png file
+
+            Returns:
+            (prediction (dict[str,float]): labels and assosiated probabilities,
+            best_guess: (str): name of the label with highest probability)
+        """
+
+        headers = {'content-type': 'application/octet-stream', "prediction-key": self.prediction_key}
+        res = requests.post(Keys.get("CV_PREDICTION_ENDPOINT"), img.read(), headers=headers).json()
+        img.seek(0)
+        pred_kv = dict([(i["tagName"], i["probability"]) for i in res["predictions"]])
+        best_guess = max(pred_kv, key=pred_kv.get)
+        return pred_kv, best_guess
+
+
+    
 
     def __chunks(self, lst, n):
         """
@@ -160,7 +192,6 @@ class Classifier:
             print(
                 "could not find container with CONTAINER_NAME name error: ", e,
             )
-
         for label in labels:
             # check if input has correct type
             if not isinstance(label, str):
@@ -178,7 +209,7 @@ class Classifier:
             else:
                 tag = tag[0]
 
-            blob_prefix = f"old/{label}/"
+            blob_prefix = f"{label}/"
             blob_list = container.list_blobs(name_starts_with=blob_prefix)
 
             if not blob_list:
@@ -194,8 +225,10 @@ class Classifier:
                     ImageUrlCreateEntry(url=blob_url, tag_ids=[tag.id])
                 )
 
+
         # upload URLs in chunks of 64
         for url_chunk in self.__chunks(url_list, setup.CV_MAX_IMAGES):
+            
             upload_result = self.trainer.create_images_from_urls(
                 self.project_id, images=url_chunk
             )
@@ -293,16 +326,17 @@ def main():
     classifier = Classifier()
 
     # classify image with URL reference
-    result, best_guess = classifier.predict_image_url(test_url)
-    print(f"url result:\n{best_guess} url result {result}")
+    #result, best_guess = classifier.predict_image_url(test_url)
+    #print(f"url result:\n{best_guess} url result {result}")
 
     # classify image
-    with open("../data/cv_testfile.png", "rb") as f:
-        result, best_guess = classifier.predict_image(f)
-        print(f"png result:\n{result}")
+    #with open("../data/cv_testfile.png", "rb") as f:
+    #    result, best_guess = classifier.predict_image(f)
+    #    print(f"png result:\n{result}")
 
     with api.app.app_context():
         labels = models.get_all_labels()
+        labels = ["airplane", "angel", "ant", "axe", "bathtub", "beach", "bee", "birthday cake", "book", "bus", "butterfly", "calculator", "camel", "castle", "cat", "cow", "crab", "crocodile", "diamond", "elephant", "eye", "frying pan", "giraffe", "hammer", "hand", "helicopter", "horse", "hospital", "key", "lightning", "mermaid", "mountain", "ocean", "palm tree", "piano", "pineapple", "pizza", "police car", "screwdriver", "sheep", "snail", "suitcase", "tractor", "watermelon", "wheel", "wristwatch"]
 
     classifier.upload_images(labels)
     classifier.train(labels)
