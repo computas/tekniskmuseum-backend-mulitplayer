@@ -70,23 +70,25 @@ class Classifier:
         self.blob_service_client = BlobServiceClient.from_connection_string(
             connect_str
         )
-
-        # get all project iterations
-        iterations = self.trainer.get_iterations(self.project_id)
-        # find published iterations
-        puplished_iterations = [
-            iteration
-            for iteration in iterations
-            if iteration.publish_name != None
-        ]
-        # get the latest published iteration
-        puplished_iterations.sort(key=lambda i: i.created)
-        if len(puplished_iterations) > 0:
-            self.iteration_name = puplished_iterations[-1].publish_name
-        else:
-            self.iteration_name = 'iteration-1'
-        with api.app.app_context():
-            models.update_iteration_name(self.iteration_name)
+        try:
+            # get all project iterations
+            iterations = self.trainer.get_iterations(self.project_id)
+            # find published iterations
+            puplished_iterations = [
+                iteration
+                for iteration in iterations
+                if iteration.publish_name != None
+            ]
+            # get the latest published iteration
+            puplished_iterations.sort(key=lambda i: i.created)
+            if len(puplished_iterations) > 0:
+                self.iteration_name = puplished_iterations[-1].publish_name
+            else:
+                self.iteration_name = 'iteration-1'
+            with api.app.app_context():
+                models.update_iteration_name(self.iteration_name)
+        except Exception as e:
+            logging.DEBUG(e)
 
     def predict_image_url(self, img_url: str) -> Dict[str, float]:
         """
