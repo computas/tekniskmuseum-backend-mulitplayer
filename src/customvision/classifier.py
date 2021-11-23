@@ -88,7 +88,7 @@ class Classifier:
             with api.app.app_context():
                 models.update_iteration_name(self.iteration_name)
         except Exception as e:
-            logging.DEBUG(e)
+            logging.debug(e)
 
     def predict_image_url(self, img_url: str) -> Dict[str, float]:
         """

@@ -50,10 +50,8 @@ def disconnect():
         other player in the room that someone left and deletes all records in the
         database connected to the session.
     """
-    logging.DEBUG("leaving")
     player_id = request.sid
     player = models.get_player(player_id)
-    logging.DEBUG("player.game_id")
     game = models.get_game(player.game_id)
     data = {"player_disconnected": True}
     models.update_game_for_player(game.game_id, player_id, 0, "Disconnected")
