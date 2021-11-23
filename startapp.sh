@@ -82,6 +82,6 @@ printline
 # Launch app
 cd src
 echo "Launching eventlet server"
-python -m webapp.app
+python3 -m webapp.app
 
 printline
