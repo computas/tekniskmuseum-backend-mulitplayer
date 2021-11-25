@@ -30,7 +30,7 @@ logger = True
 if "IS_PRODUCTION" in os.environ:
     logger = True
 
-socketio = SocketIO(app, cors_allowed_origins=["https://tekniskmuseumfrontend.z6.web.core.windows.net", "http:localhost:4200"], logger=logger)
+socketio = SocketIO(app, cors_allowed_origins='*', logger=logger)
 app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 models.create_tables(app)
