@@ -271,7 +271,10 @@ def get_opponent(game_id, player_id):
         # Needs to be changed to socket error
         raise UserError("Token invalid or expired")
     elif mp.player_1 == player_id:
-        return Players.query.get(mp.player_2)
+        if mp.player_2 is not None:
+            return Players.query.get(mp.player_2)
+        else:
+            return None 
     return Players.query.get(mp.player_1)
 
 

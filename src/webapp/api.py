@@ -56,7 +56,7 @@ def disconnect():
     data = {"player_disconnected": True}
     models.update_game_for_player(game.game_id, player_id, 0, "Disconnected")
     opponent = models.get_opponent(game.game_id, player_id)
-    if opponent.state == "Disconnected":
+    if opponent is None or opponent.state == "Disconnected":
         emit("playerDisconnected", json.dumps(data), room=player_id)
         models.delete_session_from_game(game.game_id)
     else:
@@ -89,6 +89,7 @@ def handle_joinGame(json_data):
     join_room(player_id)
     game_id = models.check_player_2_in_mulitplayer(player_id)
 
+    
     if game_id is not None:
         # Update mulitplayer table by inserting player_id for player_2 and
         # change state of palyer_1 in PIG to "Ready"
