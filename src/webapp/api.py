@@ -17,20 +17,22 @@ from webapp import models
 from webapp import storage
 from utilities.exceptions import UserError
 from utilities import setup
+from utilities.keys import Keys
 import logging
 import os
 import json
 import uuid
 import datetime
 
-
 # Initialize app
 app = Flask(__name__)
 logger = True
 if "IS_PRODUCTION" in os.environ:
     logger = True
-
-socketio = SocketIO(app, cors_allowed_origins='*', logger=logger)
+if Keys.exists("CORS_ALLOWED_ORIGIN"):
+    socketio = SocketIO(app, cors_allowed_origins=Keys.get("CORS_ALLOWED_ORIGIN"), logger=logger)
+else:
+    socketio = SocketIO(app, cors_allowed_origins='*', logger=logger)
 app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 models.create_tables(app)

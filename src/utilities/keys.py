@@ -23,7 +23,11 @@ class Keys:
     """
         Class used to get secret keys, for example the connection string for the database
     """
-
+    def exists(keyName):
+        if keyName in keys:
+            return True
+        else:
+            return False
     def get(keyName):
         """
             Returns secret matching the key. Returns appropriate error message
