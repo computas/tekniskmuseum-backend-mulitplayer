@@ -157,7 +157,7 @@ def handle_classify(data, image):
     labels = json.loads(game.labels)
     correct_label = labels[game.session_num - 1]
     # Check if the image hasn't been drawn on
-    bytes_img = Image.open(image_stream)
+    bytes_img = Image.open(image_stream).convert('RGB')
     if white_image(bytes_img):
         response = white_image_data(
             correct_label, time_left, game_id, player_id
@@ -304,7 +304,7 @@ def white_image(image):
     """
         Check if the image provided is completely white.
     """
-    if not ImageChops.invert(image).getbbox():
+    if ImageChops.invert(image).getbbox() is None:
         return True
     else:
         return False
