@@ -36,7 +36,7 @@ else:
 app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 models.create_tables(app)
-models.seed_labels(app, "./dict_eng_to_nor.csv")
+models.seed_labels(app, "src/dict_eng_to_nor.csv")
 classifier = Classifier()
 
 
@@ -91,7 +91,6 @@ def handle_joinGame(json_data):
     join_room(player_id)
     game_id = models.check_player_2_in_mulitplayer(player_id)
 
-    
     if game_id is not None:
         # Update mulitplayer table by inserting player_id for player_2 and
         # change state of palyer_1 in PIG to "Ready"
