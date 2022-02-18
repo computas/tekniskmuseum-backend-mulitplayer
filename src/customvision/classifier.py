@@ -131,7 +131,7 @@ class Classifier:
         print(self.project_id, self.iteration_name, img)
         res = self.predictor.classify_image_with_no_store(
             self.project_id, self.iteration_name, img
-        ) 
+        )
         # reset the file head such that it does not affect the state of the file handle
         img.seek(0)
         pred_kv = dict([(i.tag_name, i.probability) for i in res.predictions])
@@ -160,9 +160,6 @@ class Classifier:
         pred_kv = dict([(i["tagName"], i["probability"]) for i in res["predictions"]])
         best_guess = max(pred_kv, key=pred_kv.get)
         return pred_kv, best_guess
-
-
-    
 
     def __chunks(self, lst, n):
         """
@@ -227,10 +224,9 @@ class Classifier:
                     ImageUrlCreateEntry(url=blob_url, tag_ids=[tag.id])
                 )
 
-
         # upload URLs in chunks of 64
         for url_chunk in self.__chunks(url_list, setup.CV_MAX_IMAGES):
-            
+
             upload_result = self.trainer.create_images_from_urls(
                 self.project_id, images=url_chunk
             )
@@ -323,7 +319,7 @@ def main():
         -no more than two projects created in Azure Custom Vision
         -no more than 10 iterations done in one projectS
     """
-    test_url = "https://newdataset.blob.core.windows.net/oldimgcontainer/old/airplane/4554736336371712.png"
+    #test_url = "https://newdataset.blob.core.windows.net/oldimgcontainer/old/airplane/4554736336371712.png"
 
     classifier = Classifier()
 

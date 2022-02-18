@@ -274,7 +274,7 @@ def get_opponent(game_id, player_id):
         if mp.player_2 is not None:
             return Players.query.get(mp.player_2)
         else:
-            return None 
+            return None
     return Players.query.get(mp.player_1)
 
 
