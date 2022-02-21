@@ -6,10 +6,9 @@
     application is live.
 """
 from customvision.classifier import Classifier
-from flask_socketio import SocketIO, emit, send, join_room, close_room
+from flask_socketio import SocketIO, emit, send, join_room
 from flask import request
 from flask import Flask
-from base64 import decodestring, decodebytes
 from PIL import Image
 from PIL import ImageChops
 from io import BytesIO
@@ -86,10 +85,16 @@ def handle_joinGame(json_data):
         * If check is true insert player where player2 is none and start
           the game.
     """
+    data = json.loads(json_data)
+    try:
+        pair_id = data["pair_id"]
+    except KeyError:
+        pair_id = None
+
     player_id = request.sid
     # Players join their own room as well
     join_room(player_id)
-    game_id = models.check_player_2_in_mulitplayer(player_id)
+    game_id = models.check_player_2_in_mulitplayer(player_id, pair_id)
 
     if game_id is not None:
         # Update mulitplayer table by inserting player_id for player_2 and
@@ -105,7 +110,7 @@ def handle_joinGame(json_data):
         today = datetime.datetime.today()
         models.insert_into_games(game_id, json.dumps(labels), today)
         models.insert_into_players(player_id, game_id, "Waiting")
-        models.insert_into_mulitplayer(game_id, player_id, None)
+        models.insert_into_mulitplayer(game_id, player_id, pair_id)
         player_nr = "player_1"
         is_ready = False
 

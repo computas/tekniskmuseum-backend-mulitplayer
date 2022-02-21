@@ -20,13 +20,35 @@ def test_clients():
         yield flask_client, test_client1, test_client2
 
 
-def test_join_game(test_clients):
+@pytest.fixture
+def four_test_clients():
+    app.config["TESTING"] = True
+    with app.test_client() as flask_client:
+        test_client1 = socketio.test_client(
+            app, flask_test_client=flask_client
+        )
+        test_client2 = socketio.test_client(
+            app, flask_test_client=flask_client
+        )
+        test_client3 = socketio.test_client(
+            app, flask_test_client=flask_client
+        )
+        test_client4 = socketio.test_client(
+            app, flask_test_client=flask_client
+        )
+
+        yield flask_client, test_client1, test_client2, test_client3, test_client4
+
+@pytest.mark.parametrize('data', [
+    ('{}'),
+    ('{"pair_id": "same_pair_id"}')])
+def test_join_game_same_pair_id(test_clients, data, ):
     """
         tests wether a player is able to join game
     """
     _, ws_client1, ws_client2 = test_clients
 
-    ws_client1.emit("joinGame", {})
+    ws_client1.emit("joinGame", data)
 
     r1 = ws_client1.get_received()
     assert r1[0]["name"] == "joinGame"
@@ -35,7 +57,7 @@ def test_join_game(test_clients):
     r2 = ws_client2.get_received()
     assert r2 == []
 
-    ws_client2.emit("joinGame", {})
+    ws_client2.emit("joinGame", data)
 
     r1 = ws_client1.get_received()
     assert r1[0]["name"] == "joinGame"
@@ -45,13 +67,63 @@ def test_join_game(test_clients):
     assert r2[1]["args"][0]['ready']
 
 
+def test_join_game_diff_pair_id(four_test_clients):
+    """
+        tests wether a player is able to join game
+    """
+    _, ws_client1_1, ws_client1_2, ws_client2_1, ws_client2_2 = four_test_clients
+    data_1 = '{"pair_id": "pair_id_1"}'
+    data_2 = '{"pair_id": "pair_id_2"}'
+
+    # the first player is added to both games
+    ws_client1_1.emit("joinGame", data_1)
+
+    r11 = ws_client1_1.get_received()
+    assert r11[0]["name"] == "joinGame"
+    assert r11[0]["args"][0]['player_nr'] == 'player_1'
+    assert not r11[1]["args"][0]['ready']
+    r21 = ws_client2_1.get_received()
+    assert r21 == []
+
+    ws_client2_1.emit("joinGame", data_2)
+
+    r21 = ws_client2_1.get_received()
+    assert r21[0]["name"] == "joinGame"
+    assert r21[0]["args"][0]['player_nr'] == 'player_1'
+    assert not r21[1]["args"][0]['ready']
+    r11 = ws_client1_1.get_received()
+    assert r11 == []
+
+    # a second player is added to both games
+    ws_client1_2.emit("joinGame", data_1)
+
+    r12 = ws_client1_2.get_received()
+    assert r12[0]["name"] == "joinGame"
+    assert r12[0]["args"][0]['player_nr'] == 'player_2'
+    assert r12[1]["args"][0]['ready']
+    r11 = ws_client1_1.get_received()
+    assert r11[0]["name"] == "joinGame"
+    r21 = ws_client2_1.get_received()
+    assert r21 == []
+
+    ws_client2_2.emit("joinGame", data_2)
+
+    r2 = ws_client2_2.get_received()
+    assert r2[0]["name"] == "joinGame"
+    assert r2[0]["args"][0]['player_nr'] == 'player_2'
+    assert r2[1]["args"][0]['ready']
+    r11 = ws_client1_1.get_received()
+    assert r11 == []
+    r21 = ws_client2_1.get_received()
+    assert r21[0]["name"] == "joinGame"
+
 @pytest.mark.xfail
 def test_classification_correct(test_clients):
     """
         tests wether a player is able to join a game and submit a image
         for classification and get the result from the classification
     """
-    flask_client, ws_client1, ws_client2 = client
+    _, ws_client1, _ = test_clients
 
     assert ws_client1.is_connected()
 
