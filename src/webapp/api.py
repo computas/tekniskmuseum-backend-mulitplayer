@@ -17,7 +17,6 @@ from webapp import storage
 from utilities.exceptions import UserError
 from utilities import setup
 from utilities.keys import Keys
-import logging
 import os
 import json
 import uuid
@@ -80,19 +79,19 @@ def handle_filetest(json_data, image):
 @socketio.on("joinGame")
 def handle_joinGame(json_data):
     """
-        Check if player2 is none in mulitplayer table.
+        Check if mulitplayer table exists for the optional pair_id.
         * If check is false create new mulitplayer game.
         * If check is true insert player where player2 is none and start
           the game.
     """
-    data = json.loads(json_data)
+    data = json.loads(json_data or 'null')
     try:
         pair_id = data["pair_id"]
-    except KeyError:
+    except (KeyError, TypeError):
         pair_id = None
 
     player_id = request.sid
-    # Players join their own room as well
+    #  Players join their own room as well
     join_room(player_id)
     game_id = models.check_player_2_in_mulitplayer(player_id, pair_id)
 
