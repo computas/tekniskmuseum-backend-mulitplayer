@@ -5,7 +5,6 @@ import tempfile
 import werkzeug
 
 from webapp.api import app, socketio
-#from unittest.mock import MagicMock
 
 
 HARAMBE_PATH = "data/harambe.png"
@@ -42,6 +41,7 @@ def four_test_clients():
         )
 
         yield flask_client, test_client1, test_client2, test_client3, test_client4
+
 
 @pytest.mark.parametrize('data', [
     (''),
