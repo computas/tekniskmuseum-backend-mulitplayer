@@ -88,7 +88,7 @@ def handle_joinGame(json_data):
     try:
         pair_id = data["pair_id"]
     except (KeyError, TypeError):
-        pair_id = None
+        pair_id = ''
 
     player_id = request.sid
     #  Players join their own room as well

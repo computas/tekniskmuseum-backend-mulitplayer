@@ -40,7 +40,7 @@ def four_test_clients():
         yield flask_client, test_client1, test_client2, test_client3, test_client4
 
 @pytest.mark.parametrize('data', [
-    ('{}'),
+    (''),
     ('{"pair_id": "same_pair_id"}')])
 def test_join_game_same_pair_id(test_clients, data, ):
     """
@@ -117,7 +117,6 @@ def test_join_game_diff_pair_id(four_test_clients):
     r21 = ws_client2_1.get_received()
     assert r21[0]["name"] == "joinGame"
 
-@pytest.mark.xfail
 def test_classification_correct(test_clients):
     """
         tests wether a player is able to join a game and submit a image
@@ -127,7 +126,7 @@ def test_classification_correct(test_clients):
 
     assert ws_client1.is_connected()
 
-    ws_client1.emit("joinGame", {})
+    ws_client1.emit("joinGame", 'classify')
     r = ws_client1.get_received()
     print("joined game event", r[0]["args"][0])
     args = r[0]["args"][0]
@@ -162,18 +161,18 @@ def test_players_not_with_same_playerid(test_clients):
     """TODO: implement me"""
     _, ws_client1, ws_client2 = test_clients
 
-    ws_client1.emit("joinGame", {})
-    ws_client2.emit("joinGame", {})
+    ws_client1.emit("joinGame", '')
+    ws_client2.emit("joinGame", '')
 
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     assert r1[0]["args"][0]["player_id"] != r2[0]["args"][0]["player_id"]
-
+    assert r1[0]["args"][0]["game_id"] == r2[0]["args"][0]["game_id"]
 
 def test_players_can_keep_guessing(test_clients):
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", {})
-    ws_client2.emit("joinGame", {})
+    ws_client1.emit("joinGame", '')
+    ws_client2.emit("joinGame", '')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     game_id = r1[0]["args"][0]["game_id"]
@@ -192,8 +191,8 @@ def test_players_can_keep_guessing(test_clients):
 
 def test_players_can_reach_timeout(test_clients):
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", {})
-    ws_client2.emit("joinGame", {})
+    ws_client1.emit("joinGame", '')
+    ws_client2.emit("joinGame", '')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     game_id = r1[0]["args"][0]["game_id"]
@@ -209,8 +208,8 @@ def test_players_can_reach_timeout(test_clients):
 
 def test_end_game(test_clients):
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", {})
-    ws_client2.emit("joinGame", {})
+    ws_client1.emit("joinGame", '')
+    ws_client2.emit("joinGame", '')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     player_1_id = r1[0]["args"][0]["player_id"]
