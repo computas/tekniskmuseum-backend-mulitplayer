@@ -179,7 +179,7 @@ def handle_classify(data, image, correct_label=None):
 
     if time_out:
         opponent = models.get_opponent(game_id, player_id)
-        if opponent.state == "Done":  # and player.state != "Done":
+        if opponent.state == "Done":  
             models.update_game_for_player(game_id, player_id, 1, "Done")
             emit("roundOver", {"round_over": True}, room=game_id)
         else:
@@ -199,7 +199,7 @@ def handle_classify(data, image, correct_label=None):
 
     if has_won:
         opponent = models.get_opponent(game_id, player_id)
-        if opponent.state == "Done":  # and player.state != "Done":
+        if opponent.state == "Done": 
             models.update_game_for_player(game_id, player_id, 1, "Done")
             emit("roundOver", {"round_over": True}, room=game_id)
         else:
@@ -238,7 +238,7 @@ def handle_endGame(json_data):
 @socketio.on_error()
 def error_handler(error):
     """
-        Captures all Exeptions raised. If error is an Exception, the
+        Captures all Exceptions raised. If error is an Exception, the
         error message is returned to the client. Else the error is
         logged.
     """
