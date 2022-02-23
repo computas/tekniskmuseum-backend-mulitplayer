@@ -287,6 +287,8 @@ def update_game_for_player(game_id, player_id, ses_num, state):
     try:
         game = Games.query.get(game_id)
         game.session_num += ses_num
+        new_ses_new = game.session_num
+        print(new_ses_new)
         player = Players.query.get(player_id)
         player.state = state
         db.session.commit()

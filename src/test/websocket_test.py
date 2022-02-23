@@ -1,8 +1,12 @@
+from webbrowser import get
 import pytest
 import json
 import tempfile
 import werkzeug
+
 from webapp.api import app, socketio
+#from unittest.mock import MagicMock
+
 
 HARAMBE_PATH = "data/harambe.png"
 
@@ -117,44 +121,181 @@ def test_join_game_diff_pair_id(four_test_clients):
     r21 = ws_client2_1.get_received()
     assert r21[0]["name"] == "joinGame"
 
-def test_classification_correct(test_clients):
-    """
-        tests wether a player is able to join a game and submit a image
-        for classification and get the result from the classification
-    """
-    _, ws_client1, _ = test_clients
 
-    assert ws_client1.is_connected()
-
-    ws_client1.emit("joinGame", 'classify')
-    r = ws_client1.get_received()
-    print("joined game event", r[0]["args"][0])
-    args = r[0]["args"][0]
+def test_classification_only_client1_correct(test_clients):
+    time_left = 1
+    correct_label = "angel"
+    wrong_label = "bicycle"
+    _, ws_client1, ws_client2 = test_clients
+    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    r1 = ws_client1.get_received()
+    r2 = ws_client2.get_received()
+    args = r1[0]["args"][0]
     game_id = args["game_id"]
-    print("game id: ", game_id)
-    with open(HARAMBE_PATH, "rb") as hh:
-        data_stream = hh.read()
+    data = {"game_id": game_id, "time_left": time_left}
 
-        tmp = tempfile.SpooledTemporaryFile()
-        tmp.write(data_stream)
-        tmp.seek(0)
-        # Create file storage object containing the image
-        content_type = "image/png"
-        image = werkzeug.datastructures.FileStorage(
-            stream=tmp, filename=HARAMBE_PATH, content_type=content_type
-        )
+    ws_client1.emit("classify", data, _get_image_as_stream(HARAMBE_PATH), correct_label)
+    ws_client2.emit("classify", data, _get_image_as_stream(HARAMBE_PATH), wrong_label)
 
-        data = {"game_id": game_id, "time_left": 1}
+    r1 = ws_client1.get_received()
+    assert r1[0]["name"] == "prediction"
+    assert type(r1[0]["args"][0]["certainty"]) is dict
+    assert r1[0]["args"][0]["correctLabel"] == "engel"
+    assert r1[0]["args"][0]["guess"] == "engel"
+    assert r1[0]["args"][0]["hasWon"] is True
+    assert len(r1) == 1
 
-        ws_client1.emit("classify", data, image.stream.read())
+    r2 = ws_client2.get_received()
+    assert r2[0]["name"] == "prediction"
+    assert type(r2[0]["args"][0]["certainty"]) is dict
+    assert r2[0]["args"][0]["correctLabel"] == "sykkel"
+    assert r2[0]["args"][0]["guess"] == "engel"
+    assert r2[0]["args"][0]["hasWon"] is False
+    assert len(r2) == 1
 
-    r = ws_client1.get_received()
 
-    print("prediction", r)
-    assert r[0]["name"] == "prediction"
-    assert type(r[0]["args"][0]["certainty"]) is dict
-    assert type(r[0]["args"][0]["guess"]) is str
-    assert type(r[0]["args"][0]["hasWon"]) is bool
+def test_classification_both_correct(test_clients):
+    time_left = 1
+    correct_label = "angel"
+    _, ws_client1, ws_client2 = test_clients
+    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    r1 = ws_client1.get_received()
+    r2 = ws_client2.get_received()
+    args = r1[0]["args"][0]
+    game_id = args["game_id"]
+    data = {"game_id": game_id, "time_left": time_left}
+
+    ws_client1.emit("classify", data, _get_image_as_stream(HARAMBE_PATH), correct_label)
+
+    r1 = ws_client1.get_received()
+    assert r1[0]["name"] == "prediction"
+    assert type(r1[0]["args"][0]["certainty"]) is dict
+    assert r1[0]["args"][0]["correctLabel"] == "engel"
+    assert r1[0]["args"][0]["guess"] == "engel"
+    assert r1[0]["args"][0]["hasWon"] is True
+    assert len(r1) == 1
+    ws_client2.get_received() == []
+
+    ws_client2.emit("classify", data, _get_image_as_stream(HARAMBE_PATH), correct_label)
+
+    r1 = ws_client1.get_received()
+    assert r1[0]["name"] == "roundOver"
+    assert r1[0]["args"][0]["round_over"] is True
+    assert len(r1) == 1
+    r2 = ws_client2.get_received()
+    assert r2[0]["name"] == "prediction"
+    assert type(r2[0]["args"][0]["certainty"]) is dict
+    assert r2[0]["args"][0]["correctLabel"] == "engel"
+    assert r2[0]["args"][0]["guess"] == "engel"
+    assert r2[0]["args"][0]["hasWon"] is True
+    assert r2[1]["name"] == "roundOver"
+    assert r2[1]["args"][0]["round_over"] is True
+    assert len(r2) == 2
+
+
+def test_classification_client1_timeout_and_client2_correct(test_clients):
+    time_out = 0
+    time_left = 1
+    correct_label = "angel"
+    _, ws_client1, ws_client2 = test_clients
+    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    r1 = ws_client1.get_received()
+    r2 = ws_client2.get_received()
+    args = r1[0]["args"][0]
+    game_id = args["game_id"]
+
+    data1 = {"game_id": game_id, "time_left": time_out}
+    ws_client1.emit("classify", data1, _get_image_as_stream(HARAMBE_PATH), correct_label)
+
+    assert ws_client1.get_received() == []
+    assert ws_client2.get_received() == []
+
+    data2 = {"game_id": game_id, "time_left": time_left}
+    ws_client2.emit("classify", data2, _get_image_as_stream(HARAMBE_PATH), correct_label)
+
+    r1 = ws_client1.get_received()
+    assert r1[0]["name"] == "roundOver"
+    assert r1[0]["args"][0]["round_over"] is True
+    assert len(r1) == 1
+    r2 = ws_client2.get_received()
+    assert r2[0]["name"] == "prediction"
+    assert type(r2[0]["args"][0]["certainty"]) is dict
+    assert r2[0]["args"][0]["correctLabel"] == "engel"
+    assert r2[0]["args"][0]["guess"] == "engel"
+    assert r2[0]["args"][0]["hasWon"] is True
+    assert r2[1]["name"] == "roundOver"
+    assert r2[1]["args"][0]["round_over"] is True
+    assert len(r2) == 2
+
+
+def test_classification_client1_correct_and_client2_timeout(test_clients):
+    time_out = 0
+    time_left = 1
+    correct_label = "angel"
+    _, ws_client1, ws_client2 = test_clients
+    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    r1 = ws_client1.get_received()
+    r2 = ws_client2.get_received()
+    args = r1[0]["args"][0]
+    game_id = args["game_id"]
+
+    data1 = {"game_id": game_id, "time_left": time_left}
+    ws_client1.emit("classify", data1, _get_image_as_stream(HARAMBE_PATH), correct_label)
+
+    r1 = ws_client1.get_received()
+    assert r1[0]["name"] == "prediction"
+    assert type(r1[0]["args"][0]["certainty"]) is dict
+    assert r1[0]["args"][0]["correctLabel"] == "engel"
+    assert r1[0]["args"][0]["guess"] == "engel"
+    assert r1[0]["args"][0]["hasWon"] is True
+    assert len(r1) == 1
+    assert ws_client2.get_received() == []
+
+    data2 = {"game_id": game_id, "time_left": time_out}
+    ws_client2.emit("classify", data2, _get_image_as_stream(HARAMBE_PATH), correct_label)
+
+    r1 = ws_client1.get_received()
+    assert r1[0]["name"] == "roundOver"
+    assert r1[0]["args"][0]["round_over"] is True
+    assert len(r1) == 1
+    r2 = ws_client2.get_received()
+    assert r2[0]["name"] == "roundOver"
+    assert r2[0]["args"][0]["round_over"] is True
+    assert len(r2) == 1
+
+
+def test_classification_both_timeout(test_clients):
+    time_out = 0
+    correct_label = "angel"
+    _, ws_client1, ws_client2 = test_clients
+    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    r1 = ws_client1.get_received()
+    r2 = ws_client2.get_received()
+    args = r1[0]["args"][0]
+    game_id = args["game_id"]
+
+    data1 = {"game_id": game_id, "time_left": time_out}
+    ws_client1.emit("classify", data1, _get_image_as_stream(HARAMBE_PATH), correct_label)
+
+    assert ws_client1.get_received() == []
+    assert ws_client2.get_received() == []
+
+    data2 = {"game_id": game_id, "time_left": time_out}
+    ws_client2.emit("classify", data2, _get_image_as_stream(HARAMBE_PATH), correct_label)
+
+    r1 = ws_client1.get_received()
+    assert r1[0]["name"] == "roundOver"
+    assert r1[0]["args"][0]["round_over"] is True
+    assert len(r1) == 1
+    r2 = ws_client2.get_received()
+    assert r2[0]["name"] == "roundOver"
+    assert r2[0]["args"][0]["round_over"] is True
+    assert len(r2) == 1
 
 
 def test_players_not_with_same_playerid(test_clients):
@@ -168,6 +309,7 @@ def test_players_not_with_same_playerid(test_clients):
     r2 = ws_client2.get_received()
     assert r1[0]["args"][0]["player_id"] != r2[0]["args"][0]["player_id"]
     assert r1[0]["args"][0]["game_id"] == r2[0]["args"][0]["game_id"]
+
 
 def test_players_can_keep_guessing(test_clients):
     _, ws_client1, ws_client2 = test_clients
@@ -187,23 +329,6 @@ def test_players_can_keep_guessing(test_clients):
         r2 = ws_client2.get_received()
         assert not r1[0]["args"][0]["hasWon"]
         assert not r2[0]["args"][0]["hasWon"]
-
-
-def test_players_can_reach_timeout(test_clients):
-    _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '')
-    ws_client2.emit("joinGame", '')
-    r1 = ws_client1.get_received()
-    r2 = ws_client2.get_received()
-    game_id = r1[0]["args"][0]["game_id"]
-    data = {"game_id": game_id, "time_left": 0}
-
-    ws_client1.emit("classify", data, _get_image_as_stream(HARAMBE_PATH))
-    
-    r1 = ws_client1.get_received()
-    r2 = ws_client2.get_received()
-    assert r1[0]["args"][0]['round_over']
-    assert r2[0]["args"][0]['round_over']
 
 
 def test_end_game(test_clients):

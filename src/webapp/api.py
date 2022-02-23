@@ -141,7 +141,7 @@ def handle_getLabel(json_data):
 
 
 @socketio.on("classify")
-def handle_classify(data, image):
+def handle_classify(data, image, correct_label=None):
     """
         WS event for accepting images for classification
         params: data: {"game_id": str: the game_id you get from joinGame,
@@ -156,9 +156,11 @@ def handle_classify(data, image):
     game_id = data["game_id"]
     time_left = data["time_left"]
 
-    game = models.get_game(game_id)
-    labels = json.loads(game.labels)
-    correct_label = labels[game.session_num - 1]
+    if correct_label is None:
+        game = models.get_game(game_id)
+        labels = json.loads(game.labels)
+        correct_label = labels[game.session_num - 1]
+
     # Check if the image hasn't been drawn on
     bytes_img = Image.open(image_stream).convert('RGB')
     if white_image(bytes_img):
@@ -173,23 +175,19 @@ def handle_classify(data, image):
     certainty, best_guess = classifier.predict_image_by_post(image_stream)
     best_certainty = certainty[best_guess]
 
-    time_out = time_left <= 0
+    time_out = (time_left <= 0)
 
     if time_out:
-        player = models.get_player(player_id)
         opponent = models.get_opponent(game_id, player_id)
-        if player.state != "Done" or opponent.state != "Done":
-
-            models.update_game_for_player(game_id, player_id, 0, "Done")
-            models.update_game_for_player(
-                game_id, opponent.player_id, 1, "Done"
-            )
+        if opponent.state == "Done":  # and player.state != "Done":
+            models.update_game_for_player(game_id, player_id, 1, "Done")
             emit("roundOver", {"round_over": True}, room=game_id)
-            # save image
+        else:
+            models.update_game_for_player(game_id, player_id, 0, "Done")
             storage.save_image(image, correct_label, best_certainty)
         return
 
-    has_won = correct_label == best_guess and time_left > 0
+    has_won = (correct_label == best_guess) and (time_left > 0)
 
     response = {
         "certainty": translate_probabilities(certainty),
@@ -200,13 +198,12 @@ def handle_classify(data, image):
     emit("prediction", response)
 
     if has_won:
-        models.update_game_for_player(game_id, player_id, 0, "Done")
         opponent = models.get_opponent(game_id, player_id)
-        opponent_done = opponent.state == "Done"
-
-        if opponent_done:
+        if opponent.state == "Done":  # and player.state != "Done":
             models.update_game_for_player(game_id, player_id, 1, "Done")
             emit("roundOver", {"round_over": True}, room=game_id)
+        else:
+            models.update_game_for_player(game_id, player_id, 0, "Done")
 
         # save image
         storage.save_image(image, correct_label, best_certainty)
