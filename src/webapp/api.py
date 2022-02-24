@@ -5,22 +5,23 @@
     root has been established, since it makes it easy to check if the
     application is live.
 """
-from customvision.classifier import Classifier
 from flask_socketio import SocketIO, emit, send, join_room
 from flask import request
 from flask import Flask
 from PIL import Image
 from PIL import ImageChops
 from io import BytesIO
+import os
+import json
+import uuid
+import datetime
+
+from customvision.classifier import Classifier
 from webapp import models
 from webapp import storage
 from utilities.exceptions import UserError
 from utilities import setup
 from utilities.keys import Keys
-import os
-import json
-import uuid
-import datetime
 
 # Initialize app
 app = Flask(__name__)
@@ -179,7 +180,7 @@ def handle_classify(data, image, correct_label=None):
 
     if time_out:
         opponent = models.get_opponent(game_id, player_id)
-        if opponent.state == "Done":  
+        if opponent.state == "Done":
             models.update_game_for_player(game_id, player_id, 1, "Done")
             emit("roundOver", {"round_over": True}, room=game_id)
         else:
@@ -199,7 +200,7 @@ def handle_classify(data, image, correct_label=None):
 
     if has_won:
         opponent = models.get_opponent(game_id, player_id)
-        if opponent.state == "Done": 
+        if opponent.state == "Done":
             models.update_game_for_player(game_id, player_id, 1, "Done")
             emit("roundOver", {"round_over": True}, room=game_id)
         else:

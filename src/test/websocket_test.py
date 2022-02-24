@@ -1,3 +1,8 @@
+"""
+    Test excersing the backend API 
+"""
+
+from unittest.mock import patch, MagicMock
 from webbrowser import get
 import pytest
 import json
@@ -8,6 +13,8 @@ from webapp.api import app, socketio
 
 
 HARAMBE_PATH = "data/harambe.png"
+mock_classifier = MagicMock()
+mock_classifier.predict_image_by_post = MagicMock(return_value=({"angel": 1}, "angel"))
 
 
 @pytest.fixture
@@ -122,6 +129,7 @@ def test_join_game_diff_pair_id(four_test_clients):
     assert r21[0]["name"] == "joinGame"
 
 
+@patch('webapp.api.classifier', mock_classifier)
 def test_classification_only_client1_correct(test_clients):
     time_left = 1
     correct_label = "angel"
@@ -155,6 +163,7 @@ def test_classification_only_client1_correct(test_clients):
     assert len(r2) == 1
 
 
+@patch('webapp.api.classifier', mock_classifier)
 def test_classification_both_correct(test_clients):
     time_left = 1
     correct_label = "angel"
@@ -195,6 +204,7 @@ def test_classification_both_correct(test_clients):
     assert len(r2) == 2
 
 
+@patch('webapp.api.classifier', mock_classifier)
 def test_classification_client1_timeout_and_client2_correct(test_clients):
     time_out = 0
     time_left = 1
@@ -231,6 +241,7 @@ def test_classification_client1_timeout_and_client2_correct(test_clients):
     assert len(r2) == 2
 
 
+@patch('webapp.api.classifier', mock_classifier)
 def test_classification_client1_correct_and_client2_timeout(test_clients):
     time_out = 0
     time_left = 1
@@ -268,6 +279,7 @@ def test_classification_client1_correct_and_client2_timeout(test_clients):
     assert len(r2) == 1
 
 
+@patch('webapp.api.classifier', mock_classifier)
 def test_classification_both_timeout(test_clients):
     time_out = 0
     correct_label = "angel"

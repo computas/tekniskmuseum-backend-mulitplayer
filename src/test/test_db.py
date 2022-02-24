@@ -1,10 +1,10 @@
 """
-    Testfunctions for testing functions to manipualte the database. The
+    Testfunctions for testing functions to manipulate the database. The
     functions is used on an identical test database.
+
+    NOTE THAT YOUR IP SHOULD BE WHITELISTED DB_SERVER ON THE AZURE PROJECT
 """
-import os
 import uuid
-import time
 import datetime
 from webapp import api
 from webapp import models
