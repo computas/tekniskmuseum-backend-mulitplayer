@@ -6,13 +6,11 @@
 """
 import uuid
 import datetime
-import pytest
 from pytest import raises
 
 from webapp import api
 from webapp import models
 from utilities.exceptions import UserError
-
 
 
 class TestValues:

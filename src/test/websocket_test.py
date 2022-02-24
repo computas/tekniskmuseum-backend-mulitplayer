@@ -1,5 +1,8 @@
 """
     Test excersing the backend API 
+
+    YOUR IP SHOULD BE WHITELISTED DB_SERVER ON THE AZURE PROJECT
+
 """
 
 from unittest.mock import patch, MagicMock
