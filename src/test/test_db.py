@@ -1,15 +1,18 @@
 """
     Testfunctions for testing functions to manipulate the database. The
     functions is used on an identical test database.
-
-    NOTE THAT YOUR IP SHOULD BE WHITELISTED DB_SERVER ON THE AZURE PROJECT
 """
 import uuid
 import datetime
+import pytest
+from pytest import raises
+
 from webapp import api
 from webapp import models
-from pytest import raises
 from utilities.exceptions import UserError
+
+
+AZURE_DB = False  # YOUR IP SHOULD BE WHITELISTED DB_SERVER ON THE AZURE PROJECT
 
 
 class TestValues:
@@ -22,6 +25,7 @@ class TestValues:
     STATE = "Ready"
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_create_tables():
     """
         Check that the tables exists.
@@ -30,6 +34,7 @@ def test_create_tables():
     assert result
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_insert_into_games():
     """
         Check that records exists in Games table after inserting.
@@ -42,6 +47,7 @@ def test_insert_into_games():
     assert result
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_insert_into_scores():
     """
         Check that records exists in Scores table after inserting.
@@ -52,6 +58,7 @@ def test_insert_into_scores():
     assert result
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_insert_into_players():
     """
         Check that record exists in Players table after inserting.
@@ -64,6 +71,7 @@ def test_insert_into_players():
     assert result
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_insert_into_mulitplayer():
     """
         Check that record exists in MulitPlayer after inserting.
@@ -76,6 +84,7 @@ def test_insert_into_mulitplayer():
     assert result
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_illegal_parameter_games():
     """
         Check that exception is raised when illegal arguments is passed
@@ -87,6 +96,7 @@ def test_illegal_parameter_games():
         )
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_illegal_parameter_scores():
     """
         Check that exception is raised when illegal arguments is passed
@@ -96,6 +106,7 @@ def test_illegal_parameter_scores():
         models.insert_into_scores(100, "score", "01.01.2020")
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_illegal_parameter_labels():
     """
         Check that exception is raised when illegal arguments is passed
@@ -105,6 +116,7 @@ def test_illegal_parameter_labels():
         models.insert_into_labels(1, None)
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_illegal_parameter_players():
     """
         Check that exception is raised when illegal arguments is passed
@@ -114,6 +126,7 @@ def test_illegal_parameter_players():
         models.insert_into_players(100, 200, 11)
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_illegal_parameter_mulitplayer():
     """
         Check that exception is raised when illegal arguments is passed
@@ -123,6 +136,7 @@ def test_illegal_parameter_mulitplayer():
         models.insert_into_mulitplayer(100, 200, 11)
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_query_euqals_insert_games():
     """
         Check that inserted record is the same as record catched by query.
@@ -134,6 +148,7 @@ def test_query_euqals_insert_games():
     # Datetime assertion can't be done due to millisec differents
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_query_equals_insert_players():
     """
         Check that inserted record is the same as record catched by query.
@@ -145,6 +160,7 @@ def test_query_equals_insert_players():
     assert result.state == TestValues.STATE
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_delete_session_from_game():
     """
         Adds player to game, players and mulitplayer. Then deletes and checks if success.
@@ -159,6 +175,7 @@ def test_delete_session_from_game():
     assert result == "Record deleted."
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_get_iteration_name_is_string():
     """
         Tests if it's possible to get an iteration name from the database and the type is str
@@ -169,6 +186,7 @@ def test_get_iteration_name_is_string():
     assert isinstance(iteration_name, str)
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_get_n_labels_correct_size():
     """
         Test that get_n_labels return lists of correct sizes
@@ -179,6 +197,7 @@ def test_get_n_labels_correct_size():
             assert len(result) == i
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_get_n_labels_bad_reqeust():
     """
         Test that get_n_labels raises exeption if n is larger than number of labels
@@ -187,6 +206,7 @@ def test_get_n_labels_bad_reqeust():
         models.get_n_labels(10000)
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_to_norwegian_correct_translation():
     """
         Test that to_norwegian translates words correctly
@@ -201,14 +221,16 @@ def test_to_norwegian_correct_translation():
             assert translation == norwgian_words[i]
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_to_norwegian_illegal_parameter():
     """
-        Test that to_norwegian raises exeption if input word is not found
+        Test that to_norwegian raises exception if input word is not found
     """
     with raises(Exception):
         models.to_norwegian("this word is not in the database")
 
 
+@pytest.mark.skipif(not AZURE_DB, reason="Needs access to Azure DB")
 def test_get_iteration_name_length():
     """
         Test if the result returned has specified length
