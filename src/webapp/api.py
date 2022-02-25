@@ -179,13 +179,17 @@ def handle_classify(data, image, correct_label=None):
     time_out = (time_left <= 0)
 
     if time_out:
+        storage.save_image(image, correct_label, best_certainty)
+        player = models.get_player(player_id)
         opponent = models.get_opponent(game_id, player_id)
         if opponent.state == "Done":
-            models.update_game_for_player(game_id, player_id, 1, "Done")
+            if player.state != "Done":
+                # update state for player and increase session_id
+                models.update_game_for_player(game_id, player_id, 1, "Done")
             emit("roundOver", {"round_over": True}, room=game_id)
         else:
+            # update state for player
             models.update_game_for_player(game_id, player_id, 0, "Done")
-            storage.save_image(image, correct_label, best_certainty)
         return
 
     has_won = (correct_label == best_guess) and (time_left > 0)
@@ -199,15 +203,17 @@ def handle_classify(data, image, correct_label=None):
     emit("prediction", response)
 
     if has_won:
+        storage.save_image(image, correct_label, best_certainty)
+        player = models.get_player(player_id)
         opponent = models.get_opponent(game_id, player_id)
         if opponent.state == "Done":
-            models.update_game_for_player(game_id, player_id, 1, "Done")
+            if player.state != "Done":
+                # update state for player and increase session_id
+                models.update_game_for_player(game_id, player_id, 1, "Done")
             emit("roundOver", {"round_over": True}, room=game_id)
         else:
+            # update state for player
             models.update_game_for_player(game_id, player_id, 0, "Done")
-
-        # save image
-        storage.save_image(image, correct_label, best_certainty)
 
 
 @socketio.on("endGame")

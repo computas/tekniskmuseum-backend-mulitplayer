@@ -279,14 +279,14 @@ def get_opponent(game_id, player_id):
     return Players.query.get(mp.player_1)
 
 
-def update_game_for_player(game_id, player_id, ses_num, state):
+def update_game_for_player(game_id, player_id, increase_ses_num, state):
     """
-        Update game and player record for the incomming game_id and
+        Update game and player record for the incoming game_id and
         player_id with the given parameters.
     """
     try:
         game = Games.query.get(game_id)
-        game.session_num += ses_num
+        game.session_num += increase_ses_num
         new_ses_new = game.session_num
         print(new_ses_new)
         player = Players.query.get(player_id)
