@@ -182,7 +182,7 @@ def handle_classify(data, image, correct_label=None):
 
     if time_out:
         # to break race condition if both players timeout
-        time.sleep(2. * random.random())
+        time.sleep(0.5 * random.random())
         storage.save_image(image, correct_label, best_certainty)
         player = models.get_player(player_id)
         opponent = models.get_opponent(game_id, player_id)
