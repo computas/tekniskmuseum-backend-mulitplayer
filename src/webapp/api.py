@@ -15,6 +15,8 @@ import os
 import json
 import uuid
 import datetime
+import time
+import random
 
 from customvision.classifier import Classifier
 from webapp import models
@@ -179,6 +181,8 @@ def handle_classify(data, image, correct_label=None):
     time_out = (time_left <= 0)
 
     if time_out:
+        # to break race condition if both players timeout
+        time.sleep(2. * random.random())
         storage.save_image(image, correct_label, best_certainty)
         player = models.get_player(player_id)
         opponent = models.get_opponent(game_id, player_id)
