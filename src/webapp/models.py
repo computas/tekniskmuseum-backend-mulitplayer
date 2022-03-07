@@ -73,6 +73,7 @@ class MulitPlayer(db.Model):
     )
     player_1 = db.Column(db.NVARCHAR(32))
     player_2 = db.Column(db.NVARCHAR(32))
+    pair_id = db.Column(db.NVARCHAR(32))
 
     game = db.relationship("Games", back_populates="mulitplay")
 
@@ -184,26 +185,26 @@ def insert_into_players(player_id, game_id, state):
         raise UserError("All params has to be string.")
 
 
-def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
+def insert_into_mulitplayer(game_id, player_id, pair_id):
     """
         Insert values into MulitPlayer table.
 
         Parameters:
         game_id: random uuid.uuid4().hex
-        player_1: random uuid.uuid4().hex
-        player_2: random uuid.uuid4().hex
+        player_id: random uuid.uuid4().hex
+        pair_id: string
     """
-    player2_is_str_or_none = (
-        isinstance(player_2_id, str) or player_2_id is None
+    pair_id_is_str_or_none = (
+        isinstance(pair_id, str) or pair_id is None
     )
     if (
-        isinstance(player_1_id, str)
-        and player2_is_str_or_none
+        isinstance(player_id, str)
+        and pair_id_is_str_or_none
         and isinstance(game_id, str)
     ):
         try:
             mulitplayer = MulitPlayer(
-                player_1=player_1_id, player_2=player_2_id, game_id=game_id
+                player_1=player_id, player_2=None, game_id=game_id, pair_id=pair_id
             )
             db.session.add(mulitplayer)
             db.session.commit()
@@ -214,13 +215,13 @@ def insert_into_mulitplayer(game_id, player_1_id, player_2_id):
         raise UserError("All params has to be string.")
 
 
-def check_player_2_in_mulitplayer(player_id):
+def check_player_2_in_mulitplayer(player_id, pair_id):
     """
         Function to check if player2 is none in database. If none, a player
         can be added to the game.
     """
     # If there is no rows with player_2=None, game will be None
-    game = MulitPlayer.query.filter_by(player_2=None).first()
+    game = MulitPlayer.query.filter_by(player_2=None, pair_id=pair_id).first()
     if game is not None:
         if game.player_1 == player_id:
             raise UserError("you can't join a game with yourself")
@@ -274,18 +275,20 @@ def get_opponent(game_id, player_id):
         if mp.player_2 is not None:
             return Players.query.get(mp.player_2)
         else:
-            return None 
+            return None
     return Players.query.get(mp.player_1)
 
 
-def update_game_for_player(game_id, player_id, ses_num, state):
+def update_game_for_player(game_id, player_id, increase_ses_num, state):
     """
-        Update game and player record for the incomming game_id and
+        Update game and player record for the incoming game_id and
         player_id with the given parameters.
     """
     try:
         game = Games.query.get(game_id)
-        game.session_num += ses_num
+        game.session_num += increase_ses_num
+        new_ses_new = game.session_num
+        print(new_ses_new)
         player = Players.query.get(player_id)
         player.state = state
         db.session.commit()

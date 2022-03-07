@@ -1,6 +1,5 @@
 import sys
 import os
-from urllib import parse
 from utilities.keys import Keys
 from urllib import parse
 
@@ -10,7 +9,7 @@ TOP_N = 10
 NUM_GAMES = 3
 # certainties from costum vision lower than this -> haswon=False
 CERTAINTY_THRESHOLD = 0.7
-# certainty threhold for saving images to BLOB storage for training
+# certainty threshold for saving images to BLOB storage for training
 SAVE_CERTAINTY = 0.3
 # custom vision can't have more than 10 iterations at a time,
 # if more classifier.py will delete the oldest iteration
