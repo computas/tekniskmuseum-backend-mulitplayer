@@ -15,7 +15,7 @@ The script accepts the following flags `bash startapp.sh <flag>`:
 ### **Development**
 * Clone repository.
 * Install python 3.7
-* Install the database [driver](https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15).
+* Install the database (ver. 17) [driver](https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15).
 * Install python requirements with pip: `pip install -r requirements.txt`.
 * Save the secret keys as a json object in: `src/config.json`.
 * Run script: `bash startapp.sh -d`to run the app with test database.

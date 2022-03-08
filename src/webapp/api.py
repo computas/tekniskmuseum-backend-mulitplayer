@@ -5,44 +5,53 @@
     root has been established, since it makes it easy to check if the
     application is live.
 """
-from customvision.classifier import Classifier
-from flask_socketio import SocketIO, emit, send, join_room, close_room
+from flask_socketio import SocketIO, emit, send, join_room
 from flask import request
 from flask import Flask
-from base64 import decodestring, decodebytes
 from PIL import Image
 from PIL import ImageChops
 from io import BytesIO
+import os
+import json
+import uuid
+import datetime
+import time
+import random
+
+from customvision.classifier import Classifier
 from webapp import models
 from webapp import storage
 from utilities.exceptions import UserError
 from utilities import setup
 from utilities.keys import Keys
-import logging
-import os
-import json
-import uuid
-import datetime
 
 # Initialize app
 app = Flask(__name__)
 logger = True
+app.logger.setLevel("INFO")
 if "IS_PRODUCTION" in os.environ:
+    app.logger.setLevel("WARNING")
     logger = True
 if Keys.exists("CORS_ALLOWED_ORIGIN"):
+    app.logger.info("cors is: " + Keys.get("CORS_ALLOWED_ORIGIN"))
     socketio = SocketIO(app, cors_allowed_origins=Keys.get("CORS_ALLOWED_ORIGIN"), logger=logger)
 else:
+    app.logger.info("cors is: " + "[*]")
     socketio = SocketIO(app, cors_allowed_origins='*', logger=logger)
 app.config.from_object("utilities.setup.Flask_config")
+
 models.db.init_app(app)
+
 models.create_tables(app)
 models.seed_labels(app, "./dict_eng_to_nor.csv")
+
+
 classifier = Classifier()
 
 
 @socketio.on("connect")
 def connect():
-    print("===== client connected =====")
+    app.logger.info("===== client " + request.sid + " connected =====")
 
 
 @socketio.on("disconnect")
@@ -63,17 +72,17 @@ def disconnect():
         models.delete_session_from_game(game.game_id)
     else:
         emit("playerDisconnected", json.dumps(data), room=game.game_id)
-    print("=== client disconnected ===")
+    app.logger.info("=== client " + request.sid + " disconnected ===")
 
 
 @socketio.on("message")
 def handle_message(message):
-    print("client: " + str(message))
+    app.logger.info("client: " + str(message))
 
 
 @socketio.on("filetest")
 def handle_filetest(json_data, image):
-    print(json_data)
+    app.logger.info(json_data)
     with open("harambe.png", "wb") as f:
         f.write(image)
 
@@ -81,17 +90,24 @@ def handle_filetest(json_data, image):
 @socketio.on("joinGame")
 def handle_joinGame(json_data):
     """
-        Check if player2 is none in mulitplayer table.
+        Check if mulitplayer table exists for the optional pair_id.
         * If check is false create new mulitplayer game.
         * If check is true insert player where player2 is none and start
           the game.
     """
-    player_id = request.sid
-    # Players join their own room as well
-    join_room(player_id)
-    game_id = models.check_player_2_in_mulitplayer(player_id)
-
     
+    data = json.loads(json_data or 'null')
+    try:
+        pair_id = data["pair_id"]
+    except (KeyError, TypeError):
+        pair_id = ''
+        app.logger.error("No pair id for " + request.sid)
+    app.logger.info("pair id: " + pair_id + " player id: " + request.sid)
+    player_id = request.sid
+    #  Players join their own room as well
+    join_room(player_id)
+    game_id = models.check_player_2_in_mulitplayer(player_id, pair_id)
+
     if game_id is not None:
         # Update mulitplayer table by inserting player_id for player_2 and
         # change state of palyer_1 in PIG to "Ready"
@@ -106,7 +122,7 @@ def handle_joinGame(json_data):
         today = datetime.datetime.today()
         models.insert_into_games(game_id, json.dumps(labels), today)
         models.insert_into_players(player_id, game_id, "Waiting")
-        models.insert_into_mulitplayer(game_id, player_id, None)
+        models.insert_into_mulitplayer(game_id, player_id, pair_id)
         player_nr = "player_1"
         is_ready = False
 
@@ -134,11 +150,12 @@ def handle_getLabel(json_data):
     models.update_game_for_player(game_id, opponent.player_id, 0, "Ready")
 
     label = json.loads(get_label(game_id))
+    app.logger.info("returned label: " + label)
     emit("getLabel", json.dumps(label), room=game_id)
 
 
 @socketio.on("classify")
-def handle_classify(data, image):
+def handle_classify(data, image, correct_label=None):
     """
         WS event for accepting images for classification
         params: data: {"game_id": str: the game_id you get from joinGame,
@@ -153,9 +170,11 @@ def handle_classify(data, image):
     game_id = data["game_id"]
     time_left = data["time_left"]
 
-    game = models.get_game(game_id)
-    labels = json.loads(game.labels)
-    correct_label = labels[game.session_num - 1]
+    if correct_label is None:
+        game = models.get_game(game_id)
+        labels = json.loads(game.labels)
+        correct_label = labels[game.session_num - 1]
+
     # Check if the image hasn't been drawn on
     bytes_img = Image.open(image_stream).convert('RGB')
     if white_image(bytes_img):
@@ -170,23 +189,25 @@ def handle_classify(data, image):
     certainty, best_guess = classifier.predict_image_by_post(image_stream)
     best_certainty = certainty[best_guess]
 
-    time_out = time_left <= 0
+    time_out = (time_left <= 0)
 
     if time_out:
+        # to break race condition if both players timeout
+        time.sleep(0.5 * random.random())
+        storage.save_image(image, correct_label, best_certainty)
         player = models.get_player(player_id)
         opponent = models.get_opponent(game_id, player_id)
-        if player.state != "Done" or opponent.state != "Done":
-
-            models.update_game_for_player(game_id, player_id, 0, "Done")
-            models.update_game_for_player(
-                game_id, opponent.player_id, 1, "Done"
-            )
+        if opponent.state == "Done":
+            if player.state != "Done":
+                # update state for player and increase session_id
+                models.update_game_for_player(game_id, player_id, 1, "Done")
             emit("roundOver", {"round_over": True}, room=game_id)
-            # save image
-            storage.save_image(image, correct_label, best_certainty)
+        else:
+            # update state for player
+            models.update_game_for_player(game_id, player_id, 0, "Done")
         return
 
-    has_won = correct_label == best_guess and time_left > 0
+    has_won = (correct_label == best_guess) and (time_left > 0)
 
     response = {
         "certainty": translate_probabilities(certainty),
@@ -197,16 +218,17 @@ def handle_classify(data, image):
     emit("prediction", response)
 
     if has_won:
-        models.update_game_for_player(game_id, player_id, 0, "Done")
-        opponent = models.get_opponent(game_id, player_id)
-        opponent_done = opponent.state == "Done"
-
-        if opponent_done:
-            models.update_game_for_player(game_id, player_id, 1, "Done")
-            emit("roundOver", {"round_over": True}, room=game_id)
-
-        # save image
         storage.save_image(image, correct_label, best_certainty)
+        player = models.get_player(player_id)
+        opponent = models.get_opponent(game_id, player_id)
+        if opponent.state == "Done":
+            if player.state != "Done":
+                # update state for player and increase session_id
+                models.update_game_for_player(game_id, player_id, 1, "Done")
+            emit("roundOver", {"round_over": True}, room=game_id)
+        else:
+            # update state for player
+            models.update_game_for_player(game_id, player_id, 0, "Done")
 
 
 @socketio.on("endGame")
@@ -238,14 +260,14 @@ def handle_endGame(json_data):
 @socketio.on_error()
 def error_handler(error):
     """
-        Captures all Exeptions raised. If error is an Exception, the
+        Captures all Exceptions raised. If error is an Exception, the
         error message is returned to the client. Else the error is
         logged.
     """
+    app.logger.error(error)
+
     if isinstance(error, UserError):
         emit("error", str(error))
-    else:
-        app.logger.error(error)
 
 
 def get_label(game_id):

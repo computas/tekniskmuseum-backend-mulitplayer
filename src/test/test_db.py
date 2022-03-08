@@ -1,14 +1,15 @@
 """
-    Testfunctions for testing functions to manipualte the database. The
+    Testfunctions for testing functions to manipulate the database. The
     functions is used on an identical test database.
+
+    YOUR IP SHOULD BE WHITELISTED DB_SERVER ON THE AZURE PROJECT
 """
-import os
 import uuid
-import time
 import datetime
+from pytest import raises
+
 from webapp import api
 from webapp import models
-from pytest import raises
 from utilities.exceptions import UserError
 
 
@@ -203,7 +204,7 @@ def test_to_norwegian_correct_translation():
 
 def test_to_norwegian_illegal_parameter():
     """
-        Test that to_norwegian raises exeption if input word is not found
+        Test that to_norwegian raises exception if input word is not found
     """
     with raises(Exception):
         models.to_norwegian("this word is not in the database")
