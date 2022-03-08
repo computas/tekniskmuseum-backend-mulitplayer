@@ -37,7 +37,7 @@ else:
 app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 models.create_tables(app)
-models.seed_labels(app, "src/dict_eng_to_nor.csv")
+models.seed_labels(app, "./dict_eng_to_nor.csv")
 classifier = Classifier()
 
 
