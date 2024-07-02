@@ -99,6 +99,7 @@ def handle_joinGame(json_data):
     data = json.loads(json_data or 'null')
     try:
         pair_id = data["pair_id"]
+        difficulty_id = data["difficulty_id"]
     except (KeyError, TypeError):
         pair_id = ''
         app.logger.error("No pair id for " + request.sid)
@@ -118,9 +119,9 @@ def handle_joinGame(json_data):
 
     else:
         game_id = uuid.uuid4().hex
-        labels = models.get_n_labels(setup.NUM_GAMES)
+        labels = models.get_n_labels(setup.NUM_GAMES, difficulty_id)
         today = datetime.datetime.today()
-        models.insert_into_games(game_id, json.dumps(labels), today)
+        models.insert_into_games(game_id, json.dumps(labels), today, difficulty_id)
         models.insert_into_players(player_id, game_id, "Waiting")
         models.insert_into_mulitplayer(game_id, player_id, pair_id)
         player_nr = "player_1"
@@ -284,7 +285,7 @@ def get_label(game_id):
     label = labels[game.session_num - 1]
     norwegian_label = models.to_norwegian(label)
     data = {"label": norwegian_label}
-    return json.dumps(data)
+    return json.dumps(data["label"])
 
 
 def translate_probabilities(labels):

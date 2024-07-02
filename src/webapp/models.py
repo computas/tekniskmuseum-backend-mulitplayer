@@ -31,12 +31,15 @@ class Games(db.Model):
     session_num = db.Column(db.Integer, default=1)
     labels = db.Column(db.String(64))
     date = db.Column(db.DateTime)
-
-    players = db.relationship("Players", uselist=False, back_populates="game")
-    mulitplay = db.relationship(
-        "MulitPlayer", uselist=False, back_populates="game"
+    difficulty_id = db.Column(
+        db.Integer, db.ForeignKey("difficulty.id"), default=1)
+    players = db.relationship(
+        "Players", uselist=False, back_populates="game", cascade="all, delete"
     )
-
+    mulitplay = db.relationship(
+        "MulitPlayer", uselist=False, back_populates="game",
+        cascade="all, delete"
+    )
 
 class Scores(db.Model):
     """
@@ -45,7 +48,7 @@ class Scores(db.Model):
     """
 
     score_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(32))
+    player_id = db.Column(db.NVARCHAR(32), db.ForeignKey("players.player_id"))
     score = db.Column(db.Integer, nullable=False)
     date = db.Column(db.Date)
 
@@ -57,7 +60,8 @@ class Players(db.Model):
     """
 
     player_id = db.Column(db.NVARCHAR(32), primary_key=True)
-    game_id = db.Column(db.NVARCHAR(32), db.ForeignKey("games.game_id"), nullable=False)
+    game_id = db.Column(db.NVARCHAR(32), db.ForeignKey(
+        "games.game_id"), nullable=False)
     state = db.Column(db.String(32), nullable=False)
 
     game = db.relationship("Games", back_populates="players")
@@ -88,6 +92,21 @@ class Labels(db.Model):
 
     english = db.Column(db.String(32), primary_key=True)
     norwegian = db.Column(db.String(32))
+    difficulty_id = db.Column(
+        db.Integer, db.ForeignKey("difficulty.id"), default=1)
+    
+class User(db.Model):
+    """
+        This is user model in the database to store username and psw for
+        administrators.
+    """
+    username = db.Column(db.String(64), primary_key=True)
+    password = db.Column(db.String(256))
+
+
+class Difficulty(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    difficulty = db.Column(db.String(32), nullable=False)
 
 
 # Functions to manipulate the tables above
@@ -101,7 +120,7 @@ def create_tables(app):
     return True
 
 
-def insert_into_games(game_id, labels, date):
+def insert_into_games(game_id, labels, date, difficulty_id):
     """
         Insert values into Games table.
 
@@ -117,7 +136,7 @@ def insert_into_games(game_id, labels, date):
     ):
 
         try:
-            game = Games(game_id=game_id, labels=labels, date=date)
+            game = Games(game_id=game_id, labels=labels, date=date, difficulty_id=difficulty_id)
             db.session.add(game)
             db.session.commit()
             return True
@@ -130,7 +149,7 @@ def insert_into_games(game_id, labels, date):
         )
 
 
-def insert_into_scores(name, score, date):
+def insert_into_scores(player_id, score, date):
     """
         Insert values into Scores table.
 
@@ -142,12 +161,12 @@ def insert_into_scores(name, score, date):
     score_int_or_float = isinstance(score, float) or isinstance(score, int)
 
     if (
-        isinstance(name, str)
+        isinstance(player_id, str)
         and score_int_or_float
         and isinstance(date, datetime.date)
     ):
         try:
-            score = Scores(name=name, score=score, date=date)
+            score = Scores(player_id=player_id, score=score, date=date)
             db.session.add(score)
             db.session.commit()
             return True
@@ -158,7 +177,6 @@ def insert_into_scores(name, score, date):
             "Name has to be string, score can be int or "
             "float and date has to be datetime.date."
         )
-
 
 def insert_into_players(player_id, game_id, state):
     """
@@ -430,20 +448,20 @@ def insert_into_labels(english, norwegian):
         raise UserError("English and norwegian must be strings")
 
 
-def get_n_labels(n):
+def get_n_labels(n, difficulty_id):
     """
-        Reads all rows from database and chooses n random labels in a list
+        Reads all rows from database and chooses n random labels in a list.
     """
     try:
         # read all english labels in database
-        labels = Labels.query.all()
+        labels = Labels.query.filter(
+            Labels.difficulty_id <= difficulty_id).all()
         english_labels = [str(label.english) for label in labels]
         random_list = random.sample(english_labels, n)
         return random_list
 
     except Exception as e:
         raise Exception("Could not read Labels table: " + str(e))
-
 
 def get_all_labels():
     """
