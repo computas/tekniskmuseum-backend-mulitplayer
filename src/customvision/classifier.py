@@ -78,7 +78,7 @@ class Classifier:
             puplished_iterations = [
                 iteration
                 for iteration in iterations
-                if iteration.publish_name != None
+                if iteration.publish_name is not None
             ]
             # get the latest published iteration
             puplished_iterations.sort(key=lambda i: i.created)
@@ -133,7 +133,8 @@ class Classifier:
         res = self.predictor.classify_image_with_no_store(
             self.project_id, self.iteration_name, img
         )
-        # reset the file head such that it does not affect the state of the file handle
+        # reset the file head such that it does not affect the state of the
+        # file handle
         img.seek(0)
         pred_kv = dict([(i.tag_name, i.probability) for i in res.predictions])
         best_guess = max(pred_kv, key=pred_kv.get)
@@ -155,10 +156,14 @@ class Classifier:
             best_guess: (str): name of the label with highest probability)
         """
 
-        headers = {'content-type': 'application/octet-stream', "prediction-key": self.prediction_key}
+        headers = {
+            'content-type': 'application/octet-stream',
+            "prediction-key": self.prediction_key}
         res = self.predictor.classify_image(
-            self.project_id, self.iteration_name, img.read(), custom_headers=headers
-        )
+            self.project_id,
+            self.iteration_name,
+            img.read(),
+            custom_headers=headers)
         img.seek(0)
         pred_kv = dict([(i.tag_name, i.probability) for i in res.predictions])
         best_guess = max(pred_kv, key=pred_kv.get)
@@ -169,7 +174,7 @@ class Classifier:
             Helper method used by upload_images() to upload URL chunks of 64, which is maximum chunk size in Azure Custom Vision.
         """
         for i in range(0, len(lst), n):
-            yield lst[i : i + n]
+            yield lst[i: i + n]
 
     def upload_images(self, labels: List) -> None:
         """
@@ -322,22 +327,68 @@ def main():
         -no more than two projects created in Azure Custom Vision
         -no more than 10 iterations done in one projectS
     """
-    #test_url = "https://newdataset.blob.core.windows.net/oldimgcontainer/old/airplane/4554736336371712.png"
+    # test_url = "https://newdataset.blob.core.windows.net/oldimgcontainer/old/airplane/4554736336371712.png"
 
     classifier = Classifier()
 
     # classify image with URL reference
-    #result, best_guess = classifier.predict_image_url(test_url)
-    #print(f"url result:\n{best_guess} url result {result}")
+    # result, best_guess = classifier.predict_image_url(test_url)
+    # print(f"url result:\n{best_guess} url result {result}")
 
     # classify image
-    #with open("../data/cv_testfile.png", "rb") as f:
+    # with open("../data/cv_testfile.png", "rb") as f:
     #    result, best_guess = classifier.predict_image(f)
     #    print(f"png result:\n{result}")
 
     with api.app.app_context():
         labels = models.get_all_labels()
-        labels = ["airplane", "angel", "ant", "axe", "bathtub", "beach", "bee", "birthday cake", "book", "bus", "butterfly", "calculator", "camel", "castle", "cat", "cow", "crab", "crocodile", "diamond", "elephant", "eye", "frying pan", "giraffe", "hammer", "hand", "helicopter", "horse", "hospital", "key", "lightning", "mermaid", "mountain", "ocean", "palm tree", "piano", "pineapple", "pizza", "police car", "screwdriver", "sheep", "snail", "suitcase", "tractor", "watermelon", "wheel", "wristwatch"]
+        labels = [
+            "airplane",
+            "angel",
+            "ant",
+            "axe",
+            "bathtub",
+            "beach",
+            "bee",
+            "birthday cake",
+            "book",
+            "bus",
+            "butterfly",
+            "calculator",
+            "camel",
+            "castle",
+            "cat",
+            "cow",
+            "crab",
+            "crocodile",
+            "diamond",
+            "elephant",
+            "eye",
+            "frying pan",
+            "giraffe",
+            "hammer",
+            "hand",
+            "helicopter",
+            "horse",
+            "hospital",
+            "key",
+            "lightning",
+            "mermaid",
+            "mountain",
+            "ocean",
+            "palm tree",
+            "piano",
+            "pineapple",
+            "pizza",
+            "police car",
+            "screwdriver",
+            "sheep",
+            "snail",
+            "suitcase",
+            "tractor",
+            "watermelon",
+            "wheel",
+            "wristwatch"]
 
     classifier.upload_images(labels)
     classifier.train(labels)

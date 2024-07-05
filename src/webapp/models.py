@@ -41,6 +41,7 @@ class Games(db.Model):
         cascade="all, delete"
     )
 
+
 class Scores(db.Model):
     """
         This is the Scores model in the database. It is important that the
@@ -94,7 +95,8 @@ class Labels(db.Model):
     norwegian = db.Column(db.String(32))
     difficulty_id = db.Column(
         db.Integer, db.ForeignKey("difficulty.id"), default=1)
-    
+
+
 class User(db.Model):
     """
         This is user model in the database to store username and psw for
@@ -136,7 +138,11 @@ def insert_into_games(game_id, labels, date, difficulty_id):
     ):
 
         try:
-            game = Games(game_id=game_id, labels=labels, date=date, difficulty_id=difficulty_id)
+            game = Games(
+                game_id=game_id,
+                labels=labels,
+                date=date,
+                difficulty_id=difficulty_id)
             db.session.add(game)
             db.session.commit()
             return True
@@ -177,6 +183,7 @@ def insert_into_scores(player_id, score, date):
             "Name has to be string, score can be int or "
             "float and date has to be datetime.date."
         )
+
 
 def insert_into_players(player_id, game_id, state):
     """
@@ -222,8 +229,10 @@ def insert_into_mulitplayer(game_id, player_id, pair_id):
     ):
         try:
             mulitplayer = MulitPlayer(
-                player_1=player_id, player_2=None, game_id=game_id, pair_id=pair_id
-            )
+                player_1=player_id,
+                player_2=None,
+                game_id=game_id,
+                pair_id=pair_id)
             db.session.add(mulitplayer)
             db.session.commit()
             return True
@@ -462,6 +471,7 @@ def get_n_labels(n, difficulty_id):
 
     except Exception as e:
         raise Exception("Could not read Labels table: " + str(e))
+
 
 def get_all_labels():
     """
