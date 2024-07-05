@@ -34,7 +34,8 @@ if "IS_PRODUCTION" in os.environ:
     logger = True
 if Keys.exists("CORS_ALLOWED_ORIGIN"):
     app.logger.info("cors is: " + Keys.get("CORS_ALLOWED_ORIGIN"))
-    socketio = SocketIO(app, cors_allowed_origins=Keys.get("CORS_ALLOWED_ORIGIN"), logger=logger)
+    socketio = SocketIO(app, cors_allowed_origins=Keys.get(
+        "CORS_ALLOWED_ORIGIN"), logger=logger)
 else:
     app.logger.info("cors is: " + "[*]")
     socketio = SocketIO(app, cors_allowed_origins='*', logger=logger)
@@ -95,7 +96,7 @@ def handle_joinGame(json_data):
         * If check is true insert player where player2 is none and start
           the game.
     """
-    
+
     data = json.loads(json_data or 'null')
     try:
         pair_id = data["pair_id"]
@@ -121,7 +122,8 @@ def handle_joinGame(json_data):
         game_id = uuid.uuid4().hex
         labels = models.get_n_labels(setup.NUM_GAMES, difficulty_id)
         today = datetime.datetime.today()
-        models.insert_into_games(game_id, json.dumps(labels), today, difficulty_id)
+        models.insert_into_games(
+            game_id, json.dumps(labels), today, difficulty_id)
         models.insert_into_players(player_id, game_id, "Waiting")
         models.insert_into_mulitplayer(game_id, player_id, pair_id)
         player_nr = "player_1"
@@ -150,7 +152,7 @@ def handle_getLabel(json_data):
     models.update_game_for_player(game_id, player_id, 0, "Ready")
     models.update_game_for_player(game_id, opponent.player_id, 0, "Ready")
 
-    label = json.loads(get_label(game_id))
+    label = get_label(game_id)
     app.logger.info("returned label: " + label)
     emit("getLabel", json.dumps(label), room=game_id)
 
@@ -271,9 +273,9 @@ def error_handler(error):
         emit("error", str(error))
 
 
-def get_label(game_id):
+def get_label(game_id) -> dict[str, str]:
     """
-        Provides the client with a new word.
+        Provides the client with a new word in both languages.
     """
     game = models.get_game(game_id)
 
@@ -282,10 +284,10 @@ def get_label(game_id):
         send("Number of games exceeded")
 
     labels = json.loads(game.labels)
-    label = labels[game.session_num - 1]
+    label: str = labels[game.session_num - 1]
     norwegian_label = models.to_norwegian(label)
-    data = {"label": norwegian_label}
-    return json.dumps(data["label"])
+    data = {"label": label, "norwegian_label": norwegian_label}
+    return data
 
 
 def translate_probabilities(labels):
