@@ -17,7 +17,8 @@ from webapp.api import app, socketio
 
 HARAMBE_PATH = "data/harambe.png"
 mock_classifier = MagicMock()
-mock_classifier.predict_image_by_post = MagicMock(return_value=({"angel": 1}, "angel"))
+mock_classifier.predict_image_by_post = MagicMock(
+    return_value=({"angel": 1}, "angel"))
 
 
 @pytest.fixture
@@ -146,8 +147,16 @@ def test_classification_only_client1_correct(test_clients):
     game_id = args["game_id"]
     data = {"game_id": game_id, "time_left": time_left}
 
-    ws_client1.emit("classify", data, _get_image_as_stream(HARAMBE_PATH), correct_label)
-    ws_client2.emit("classify", data, _get_image_as_stream(HARAMBE_PATH), wrong_label)
+    ws_client1.emit(
+        "classify",
+        data,
+        _get_image_as_stream(HARAMBE_PATH),
+        correct_label)
+    ws_client2.emit(
+        "classify",
+        data,
+        _get_image_as_stream(HARAMBE_PATH),
+        wrong_label)
 
     r1 = ws_client1.get_received()
     assert r1[0]["name"] == "prediction"
@@ -179,7 +188,11 @@ def test_classification_both_correct(test_clients):
     game_id = args["game_id"]
     data = {"game_id": game_id, "time_left": time_left}
 
-    ws_client1.emit("classify", data, _get_image_as_stream(HARAMBE_PATH), correct_label)
+    ws_client1.emit(
+        "classify",
+        data,
+        _get_image_as_stream(HARAMBE_PATH),
+        correct_label)
 
     r1 = ws_client1.get_received()
     assert r1[0]["name"] == "prediction"
@@ -190,7 +203,11 @@ def test_classification_both_correct(test_clients):
     assert len(r1) == 1
     ws_client2.get_received() == []
 
-    ws_client2.emit("classify", data, _get_image_as_stream(HARAMBE_PATH), correct_label)
+    ws_client2.emit(
+        "classify",
+        data,
+        _get_image_as_stream(HARAMBE_PATH),
+        correct_label)
 
     r1 = ws_client1.get_received()
     assert r1[0]["name"] == "roundOver"
@@ -221,13 +238,21 @@ def test_classification_client1_timeout_and_client2_correct(test_clients):
     game_id = args["game_id"]
 
     data1 = {"game_id": game_id, "time_left": time_out}
-    ws_client1.emit("classify", data1, _get_image_as_stream(HARAMBE_PATH), correct_label)
+    ws_client1.emit(
+        "classify",
+        data1,
+        _get_image_as_stream(HARAMBE_PATH),
+        correct_label)
 
     assert ws_client1.get_received() == []
     assert ws_client2.get_received() == []
 
     data2 = {"game_id": game_id, "time_left": time_left}
-    ws_client2.emit("classify", data2, _get_image_as_stream(HARAMBE_PATH), correct_label)
+    ws_client2.emit(
+        "classify",
+        data2,
+        _get_image_as_stream(HARAMBE_PATH),
+        correct_label)
 
     r1 = ws_client1.get_received()
     assert r1[0]["name"] == "roundOver"
@@ -258,7 +283,11 @@ def test_classification_client1_correct_and_client2_timeout(test_clients):
     game_id = args["game_id"]
 
     data1 = {"game_id": game_id, "time_left": time_left}
-    ws_client1.emit("classify", data1, _get_image_as_stream(HARAMBE_PATH), correct_label)
+    ws_client1.emit(
+        "classify",
+        data1,
+        _get_image_as_stream(HARAMBE_PATH),
+        correct_label)
 
     r1 = ws_client1.get_received()
     assert r1[0]["name"] == "prediction"
@@ -270,7 +299,11 @@ def test_classification_client1_correct_and_client2_timeout(test_clients):
     assert ws_client2.get_received() == []
 
     data2 = {"game_id": game_id, "time_left": time_out}
-    ws_client2.emit("classify", data2, _get_image_as_stream(HARAMBE_PATH), correct_label)
+    ws_client2.emit(
+        "classify",
+        data2,
+        _get_image_as_stream(HARAMBE_PATH),
+        correct_label)
 
     r1 = ws_client1.get_received()
     assert r1[0]["name"] == "roundOver"
@@ -295,13 +328,21 @@ def test_classification_both_timeout(test_clients):
     game_id = args["game_id"]
 
     data1 = {"game_id": game_id, "time_left": time_out}
-    ws_client1.emit("classify", data1, _get_image_as_stream(HARAMBE_PATH), correct_label)
+    ws_client1.emit(
+        "classify",
+        data1,
+        _get_image_as_stream(HARAMBE_PATH),
+        correct_label)
 
     assert ws_client1.get_received() == []
     assert ws_client2.get_received() == []
 
     data2 = {"game_id": game_id, "time_left": time_out}
-    ws_client2.emit("classify", data2, _get_image_as_stream(HARAMBE_PATH), correct_label)
+    ws_client2.emit(
+        "classify",
+        data2,
+        _get_image_as_stream(HARAMBE_PATH),
+        correct_label)
 
     r1 = ws_client1.get_received()
     assert r1[0]["name"] == "roundOver"
@@ -339,7 +380,7 @@ def test_players_can_keep_guessing(test_clients):
 
         ws_client1.emit("classify", data, _get_image_as_stream(HARAMBE_PATH))
         ws_client2.emit("classify", data, _get_image_as_stream(HARAMBE_PATH))
-        
+
         r1 = ws_client1.get_received()
         r2 = ws_client2.get_received()
         assert not r1[0]["args"][0]["hasWon"]
@@ -354,7 +395,8 @@ def test_end_game(test_clients):
     r2 = ws_client2.get_received()
     player_1_id = r1[0]["args"][0]["player_id"]
     game_id = r1[0]["args"][0]["game_id"]
-    data = json.dumps({"game_id": game_id, "player_id": player_1_id, "score": 100})
+    data = json.dumps(
+        {"game_id": game_id, "player_id": player_1_id, "score": 100})
 
     ws_client1.emit('endGame', data)
 
