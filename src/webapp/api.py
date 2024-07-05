@@ -153,7 +153,7 @@ def handle_getLabel(json_data):
     models.update_game_for_player(game_id, opponent.player_id, 0, "Ready")
 
     label = get_label(game_id)
-    app.logger.info("returned label: " + label)
+    app.logger.info("returned label: " + json.dumps(label))
     emit("getLabel", json.dumps(label), room=game_id)
 
 
