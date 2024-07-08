@@ -19,6 +19,7 @@ import time
 import random
 
 from customvision.classifier import Classifier
+from utilities.difficulties import DifficultyId
 from webapp import models
 from webapp import storage
 from utilities.exceptions import UserError
@@ -176,7 +177,7 @@ def view_high_score(json_data):
         Read highscore from database. Return top n of all time and daily high
         scores.
     """
-    difficulty_id = 4
+    difficulty_id = DifficultyId.Multiplayer
     data = json.loads(json_data)
     game_id = data["game_id"]
     # read top n overall high score
