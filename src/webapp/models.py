@@ -187,8 +187,7 @@ def insert_into_scores(player_id, score, date, difficulty_id: DifficultyId):
     else:
         raise UserError(
             "Name has to be string, score can be int or "
-            "float, difficulty_id has to be an integer and date has to be datetime.date."
-        )
+            "float, difficulty_id has to be an integer and date has to be datetime.date.")
 
 
 def insert_into_players(player_id, game_id, state):
