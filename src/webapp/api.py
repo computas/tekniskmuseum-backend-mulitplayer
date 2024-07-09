@@ -11,14 +11,15 @@ from flask import Flask
 from PIL import Image
 from PIL import ImageChops
 from io import BytesIO
+from datetime import datetime
 import os
 import json
 import uuid
-import datetime
 import time
 import random
 
 from customvision.classifier import Classifier
+from utilities.difficulties import DifficultyId
 from webapp import models
 from webapp import storage
 from utilities.exceptions import UserError
@@ -121,7 +122,7 @@ def handle_joinGame(json_data):
     else:
         game_id = uuid.uuid4().hex
         labels = models.get_n_labels(setup.NUM_GAMES, difficulty_id)
-        today = datetime.datetime.today()
+        today = datetime.today()
         models.insert_into_games(
             game_id, json.dumps(labels), today, difficulty_id)
         models.insert_into_players(player_id, game_id, "Waiting")
@@ -155,6 +156,42 @@ def handle_getLabel(json_data):
     label = get_label(game_id)
     app.logger.info("returned label: " + json.dumps(label))
     emit("getLabel", json.dumps(label), room=game_id)
+
+
+@socketio.on("postScore")
+def handle_postScore(json_data):
+    data = json.loads(json_data)
+    app.logger.info(data)
+    player_id = data.get("player_id")
+    score = float(data.get("score"))
+    difficulty_id = int(data.get("difficulty_id"))
+    assert isinstance(difficulty_id, int)
+
+    today = datetime.today()
+    models.insert_into_scores(player_id, score, today, difficulty_id)
+
+
+@socketio.on("viewHighScore")
+def view_high_score(json_data):
+    """
+        Read highscore from database. Return top n of all time and daily high
+        scores.
+    """
+    difficulty_id = DifficultyId.Multiplayer
+    data = json.loads(json_data)
+    game_id = data["game_id"]
+    # read top n overall high score
+    top_n_high_scores = models.get_top_n_high_score_list(
+        setup.TOP_N, difficulty_id=difficulty_id)
+    # read daily high score
+    daily_high_scores = models.get_daily_high_score(
+        difficulty_id=difficulty_id)
+    data = {
+        "daily": daily_high_scores,
+        "total": top_n_high_scores,
+    }
+
+    emit("viewHighScore", json.dumps(data), room=game_id)
 
 
 @socketio.on("classify")
@@ -241,7 +278,6 @@ def handle_endGame(json_data):
         their scores and the player with the highest score is deemed the winner.
         The two scores are finally stored in the database.
     """
-    date = datetime.datetime.today()
     data = json.loads(json_data)
     # Get data from given player
     game_id = data["game_id"]
@@ -251,7 +287,6 @@ def handle_endGame(json_data):
         pass
         # raise excp.BadRequest("Game not finished")
     # Insert score information into db
-    models.insert_into_scores(player_id, score_player, date)
     # Create a list containing player data which is sent out to both players
     return_data = {"score": score_player, "playerId": player_id}
     # Retrieve the opponent (client) to pass on the score to
