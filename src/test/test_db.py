@@ -8,6 +8,7 @@ import uuid
 import datetime
 from pytest import raises
 
+from utilities.difficulties import DifficultyId
 from webapp import api
 from webapp import models
 from utilities.exceptions import UserError
@@ -47,8 +48,10 @@ def test_insert_into_scores():
     """
         Check that records exists in Scores table after inserting.
     """
+    easy_difficulty = DifficultyId.Easy
     with api.app.app_context():
-        result = models.insert_into_scores("Test User", 500, TestValues.TODAY)
+        result = models.insert_into_scores(
+            "Test User", 500, TestValues.TODAY, easy_difficulty)
 
     assert result
 
@@ -94,7 +97,8 @@ def test_illegal_parameter_scores():
         into scores table.
     """
     with raises(UserError):
-        models.insert_into_scores(100, "score", "01.01.2020")
+        models.insert_into_scores(
+            100, "score", "01.01.2020", DifficultyId.Medium)
 
 
 def test_illegal_parameter_labels():
