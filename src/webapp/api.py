@@ -19,6 +19,7 @@ import time
 import random
 
 from customvision.classifier import Classifier
+from utilities.languages import Language
 from webapp import models
 from webapp import storage
 from utilities.exceptions import UserError
@@ -172,6 +173,7 @@ def handle_classify(data, image, correct_label=None):
     player_id = request.sid
     game_id = data["game_id"]
     time_left = data["time_left"]
+    lang: Language = data["lang"]
 
     if correct_label is None:
         game = models.get_game(game_id)
@@ -212,12 +214,23 @@ def handle_classify(data, image, correct_label=None):
 
     has_won = (correct_label == best_guess) and (time_left > 0)
 
-    response = {
-        "certainty": translate_probabilities(certainty),
-        "guess": models.to_norwegian(best_guess),
-        "correctLabel": models.to_norwegian(correct_label),
-        "hasWon": has_won,
-    }
+    if lang == Language.Norwegian:
+
+        response = {
+            "certainty": translate_probabilities(certainty),
+            "guess": models.to_norwegian(best_guess),
+            "correctLabel": models.to_norwegian(correct_label),
+            "hasWon": has_won,
+        }
+
+    else:
+        response = {
+            "certainty": certainty,
+            "guess": best_guess,
+            "correctLabel": correct_label,
+            "hasWon": has_won,
+        }
+
     emit("prediction", response)
 
     if has_won:
