@@ -50,7 +50,8 @@ class Scores(db.Model):
     """
 
     score_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    player_id = db.Column(db.NVARCHAR(32), db.ForeignKey("players.player_id"))
+    player_id = db.Column(db.NVARCHAR(32), db.ForeignKey(
+        "players.player_id", ondelete='CASCADE'))
     score = db.Column(db.Integer, nullable=False)
     date = db.Column(db.Date)
     difficulty_id = db.Column(
@@ -69,6 +70,7 @@ class Players(db.Model):
     state = db.Column(db.String(32), nullable=False)
 
     game = db.relationship("Games", back_populates="players")
+    scores = db.relationship("Scores", backref="Players", passive_deletes=True)
 
 
 class MulitPlayer(db.Model):
@@ -382,14 +384,14 @@ def delete_session_from_game(game_id):
 
 def delete_old_games():
     """
-        Delete records in games older than one hour.
+        Delete records in games older than one day.
     """
     try:
         games = (
             db.session.query(Games)
             .filter(
                 Games.date
-                < (datetime.datetime.today() - datetime.timedelta(hours=1))
+                < (datetime.datetime.today() - datetime.timedelta(days=1))
             )
             .all()
         )
