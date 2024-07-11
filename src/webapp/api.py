@@ -204,7 +204,6 @@ def get_example_drawings(json_data):
     number_of_images = data["number_of_images"]
     label = data["label"]
     example_drawings = storage.get_n_random_images_from_label(number_of_images, label)
-    print(example_drawings)
     emit("getExampleDrawings", json.dumps(example_drawings), room=game_id)
 
 
