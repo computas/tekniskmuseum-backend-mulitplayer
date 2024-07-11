@@ -142,4 +142,3 @@ def image_to_data_url(image_data, content_type):
     """
     base64_image = base64.b64encode(image_data).decode('utf-8')
     return f"data:{content_type};base64,{base64_image}"
-
