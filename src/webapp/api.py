@@ -203,7 +203,12 @@ def get_example_drawings(json_data):
     data = json.loads(json_data)
     game_id = data["game_id"]
     number_of_images = data["number_of_images"]
+
     label = data["label"]
+    lang = data["lang"]
+    if (lang == "NO"):
+        label = models.to_english(label)
+
     example_drawings = storage.get_n_random_images_from_label(
         number_of_images, label)
     emit("getExampleDrawings", json.dumps(example_drawings), room=game_id)

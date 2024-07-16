@@ -480,6 +480,20 @@ def to_norwegian(english_label):
         )
 
 
+def to_english(norwegian_label):
+    """
+        Reads the labels table and return the english translation of the norwegian label
+    """
+    try:
+        query = Labels.query.filter(Labels.norwegian == norwegian_label)[0]
+        return str(query.english)
+
+    except AttributeError as e:
+        raise AttributeError(
+            "Could not find translation in Labels table: " + str(e)
+        )
+
+
 def seed_labels(app, filepath):
     """
         Function for updating labels in database.
