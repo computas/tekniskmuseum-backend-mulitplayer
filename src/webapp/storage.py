@@ -142,3 +142,18 @@ def image_to_data_url(image_data, content_type):
     """
     base64_image = base64.b64encode(image_data).decode('utf-8')
     return f"data:{content_type};base64,{base64_image}"
+
+def get_images_from_relative_url(image_urls):
+    """
+        Returns a list of images from a list of relative URLs.
+    """
+    container_client = blob_connection(setup.CONTAINER_NAME_ORIGINAL)
+    images = []
+    for image in image_urls:
+        blob_client = container_client.get_blob_client(image)
+
+        image_data = blob_client.download_blob().readall()
+        decoded_image = image_to_data_url(
+            image_data, "application/octet-stream")
+        images.append(decoded_image)
+    return images
