@@ -115,6 +115,7 @@ class Difficulty(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     difficulty = db.Column(db.String(32), nullable=False)
 
+
 class ExampleImages(db.Model):
     """
         Model for storing example image urls that the model has predicted correctly.
@@ -588,6 +589,7 @@ def get_translation_dict():
         )
     except Exception as e:
         raise Exception("Could not read Labels table: " + str(e))
+
 
 def insert_into_example_images(images, label):
     """
