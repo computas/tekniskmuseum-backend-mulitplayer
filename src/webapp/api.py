@@ -46,7 +46,7 @@ app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 
 models.create_tables(app)
-models.seed_labels(app, "./dict_eng_to_nor.csv")
+models.seed_labels(app, "./dict_eng_to_nor_difficulties_v2.csv")
 
 
 classifier = Classifier()
@@ -209,8 +209,10 @@ def get_example_drawings(json_data):
     if (lang == "NO"):
         label = models.to_english(label)
 
-    example_drawings = storage.get_n_random_images_from_label(
-        number_of_images, label)
+    example_drawing_urls = models.get_n_random_example_images(
+        label, number_of_images)
+    example_drawings = storage.get_images_from_relative_url(
+        example_drawing_urls)
     emit("getExampleDrawings", json.dumps(example_drawings), room=game_id)
 
 
