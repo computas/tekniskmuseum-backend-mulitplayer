@@ -196,7 +196,7 @@ def view_high_score(json_data):
 
 
 @socketio.on("getExampleDrawings")
-def get_example_drawings(json_data):
+def get_example_drawings(json_data, emitEndpoint="getExampleDrawings"):
     """
         Get example drawings from the database
     """
@@ -213,8 +213,15 @@ def get_example_drawings(json_data):
         label, number_of_images)
     example_drawings = storage.get_images_from_relative_url(
         example_drawing_urls)
-    emit("getExampleDrawings", json.dumps(example_drawings), room=game_id)
+    emit(emitEndpoint, json.dumps(example_drawings), room=game_id)
 
+@socketio.on("getExampleDrawingsP1")
+def get_example_drawings_player_1(json_data):
+    get_example_drawings(json_data, emitEndpoint="getExampleDrawingsP1")
+
+@socketio.on("getExampleDrawingsP2")
+def get_example_drawings_player_2(json_data):
+    get_example_drawings(json_data, emitEndpoint="getExampleDrawingsP2")
 
 @socketio.on("classify")
 def handle_classify(data, image, correct_label=None):
