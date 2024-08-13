@@ -18,6 +18,7 @@ parser.add_argument(
 ARGUMENTS = parser.parse_args()
 # export keys
 KEYLIST = json.loads(ARGUMENTS.keys)
+print(KEYLIST)
 for keydict in KEYLIST:
     os.environ[keydict["name"]] = keydict["value"]
 
