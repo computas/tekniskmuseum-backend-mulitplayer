@@ -7,12 +7,17 @@
 import uuid
 import datetime
 from pytest import raises
+import sys
+import os
+
+current_directory = os.getcwd()
+utilities_directory = current_directory.replace("/test", "")
+sys.path.insert(0, utilities_directory)
 
 from utilities.difficulties import DifficultyId
 from webapp import api
 from webapp import models
 from utilities.exceptions import UserError
-
 
 class TestValues:
     PLAYER_ID = uuid.uuid4().hex
