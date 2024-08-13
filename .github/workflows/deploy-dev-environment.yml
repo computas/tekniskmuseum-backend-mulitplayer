@@ -33,7 +33,7 @@ jobs:
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       - name: Run tests
         run: |
-        python3 /src/runTests.py --keys "$(echo '[{\"name\": \"SECRET_KEY\", \"value\": \"${{ secrets.SECRET_KEY }}\"}]')"
+        python3 src/runTests.py --keys "$(echo '[{\"name\": \"SECRET_KEY\", \"value\": \"${{ secrets.SECRET_KEY }}\"}]')"
 
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
