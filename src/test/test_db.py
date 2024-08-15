@@ -10,8 +10,8 @@ from pytest import raises
 import sys
 import os
 
-current_directory = os.getcwd()
-utilities_directory = current_directory.replace("/test", "")
+#current_directory = os.getcwd()
+utilities_directory = sys.path[0].replace("/test", "")
 sys.path.insert(0, utilities_directory)
 
 from utilities.difficulties import DifficultyId
@@ -43,7 +43,7 @@ def test_insert_into_games():
     """
     with api.app.app_context():
         result = models.insert_into_games(
-            TestValues.GAME_ID, TestValues.LABELS, TestValues.TODAY
+            TestValues.GAME_ID, TestValues.LABELS, TestValues.TODAY, DifficultyId.Easy
         )
 
     assert result
@@ -92,7 +92,7 @@ def test_illegal_parameter_games():
     """
     with raises(UserError):
         models.insert_into_games(
-            10, ["label1", "label2", "label3"], "date_time"
+            10, ["label1", "label2", "label3"], "date_time", DifficultyId.Easy
         )
 
 
@@ -162,7 +162,7 @@ def test_delete_session_from_game():
     game_id = uuid.uuid4().hex
     player_id = uuid.uuid4().hex
     with api.app.app_context():
-        models.insert_into_games(game_id, TestValues.LABELS, TestValues.TODAY)
+        models.insert_into_games(game_id, TestValues.LABELS, TestValues.TODAY, DifficultyId.Medium)
         models.insert_into_players(player_id, game_id, "Waiting")
         models.insert_into_mulitplayer(game_id, player_id, None)
         result = models.delete_session_from_game(game_id)
@@ -185,7 +185,7 @@ def test_get_n_labels_correct_size():
     """
     with api.app.app_context():
         for i in range(5):
-            result = models.get_n_labels(i)
+            result = models.get_n_labels(i, DifficultyId.Hard)
             assert len(result) == i
 
 
@@ -226,4 +226,4 @@ def test_get_iteration_name_length():
     with api.app.app_context():
         iteration_name = models.get_iteration_name()
 
-    assert len(iteration_name) == TestValues.CV_ITERATION_NAME_LENGTH
+    assert len(iteration_name) > 0

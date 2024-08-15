@@ -11,9 +11,13 @@ import pytest
 import json
 import tempfile
 import werkzeug
+import sys
+import os
+
+utilities_directory = sys.path[0].replace("/test", "")
+sys.path.insert(0, utilities_directory)
 
 from webapp.api import app, socketio
-
 
 HARAMBE_PATH = "data/harambe.png"
 mock_classifier = MagicMock()
@@ -31,6 +35,9 @@ def test_clients():
         test_client2 = socketio.test_client(
             app, flask_test_client=flask_client
         )
+        """ response = flask_client.get("/")
+        assert response.status_code == 200 """
+        
         yield flask_client, test_client1, test_client2
 
 
@@ -59,7 +66,7 @@ def four_test_clients():
     ('{"pair_id": "same_pair_id"}')])
 def test_join_game_same_pair_id(test_clients, data, ):
     """
-        tests wether a player is able to join game
+        tests whether a player is able to join game
     """
     _, ws_client1, ws_client2 = test_clients
 
