@@ -7,19 +7,24 @@
 import uuid
 import datetime
 from pytest import raises
+import sys
+import os
+
+#current_directory = os.getcwd()
+utilities_directory = sys.path[0].replace("/test", "")
+sys.path.insert(0, utilities_directory)
 
 from utilities.difficulties import DifficultyId
 from webapp import api
 from webapp import models
 from utilities.exceptions import UserError
 
-
 class TestValues:
     PLAYER_ID = uuid.uuid4().hex
     PLAYER_2 = uuid.uuid4().hex
     GAME_ID = uuid.uuid4().hex
     TODAY = datetime.datetime.today()
-    CV_ITERATION_NAME_LENGTH = 36
+    CV_ITERATION_NAME = "Iteration5"
     LABELS = "label1, label2, label3"
     STATE = "Ready"
 
@@ -38,23 +43,10 @@ def test_insert_into_games():
     """
     with api.app.app_context():
         result = models.insert_into_games(
-            TestValues.GAME_ID, TestValues.LABELS, TestValues.TODAY
+            TestValues.GAME_ID, TestValues.LABELS, TestValues.TODAY, DifficultyId.Easy
         )
 
     assert result
-
-
-def test_insert_into_scores():
-    """
-        Check that records exists in Scores table after inserting.
-    """
-    easy_difficulty = DifficultyId.Easy
-    with api.app.app_context():
-        result = models.insert_into_scores(
-            "Test User", 500, TestValues.TODAY, easy_difficulty)
-
-    assert result
-
 
 def test_insert_into_players():
     """
@@ -68,9 +60,22 @@ def test_insert_into_players():
     assert result
 
 
-def test_insert_into_mulitplayer():
+def test_insert_into_scores():
     """
-        Check that record exists in MulitPlayer after inserting.
+        Check that records exists in Scores table after inserting.
+    """
+    with api.app.app_context():
+
+       #models.insert_into_players(TestValues.PLAYER_ID, TestValues.GAME_ID, TestValues.STATE)
+       
+        result = models.insert_into_scores(
+            TestValues.PLAYER_ID, 500, TestValues.TODAY, DifficultyId.Easy)
+
+    assert result
+
+def test_insert_into_multiplayer():
+    """
+        Check that record exists in MultiPlayer after inserting.
     """
     with api.app.app_context():
         result = models.insert_into_mulitplayer(
@@ -87,7 +92,7 @@ def test_illegal_parameter_games():
     """
     with raises(UserError):
         models.insert_into_games(
-            10, ["label1", "label2", "label3"], "date_time"
+            10, ["label1", "label2", "label3"], "date_time", DifficultyId.Easy
         )
 
 
@@ -128,7 +133,7 @@ def test_illegal_parameter_mulitplayer():
         models.insert_into_mulitplayer(100, 200, 11)
 
 
-def test_query_euqals_insert_games():
+def test_query_equals_insert_games():
     """
         Check that inserted record is the same as record catched by query.
     """
@@ -157,7 +162,7 @@ def test_delete_session_from_game():
     game_id = uuid.uuid4().hex
     player_id = uuid.uuid4().hex
     with api.app.app_context():
-        models.insert_into_games(game_id, TestValues.LABELS, TestValues.TODAY)
+        models.insert_into_games(game_id, TestValues.LABELS, TestValues.TODAY, DifficultyId.Medium)
         models.insert_into_players(player_id, game_id, "Waiting")
         models.insert_into_mulitplayer(game_id, player_id, None)
         result = models.delete_session_from_game(game_id)
@@ -180,7 +185,7 @@ def test_get_n_labels_correct_size():
     """
     with api.app.app_context():
         for i in range(5):
-            result = models.get_n_labels(i)
+            result = models.get_n_labels(i, DifficultyId.Hard)
             assert len(result) == i
 
 
@@ -197,13 +202,13 @@ def test_to_norwegian_correct_translation():
         Test that to_norwegian translates words correctly
     """
     english_words = ["mermaid", "axe", "airplane"]
-    norwgian_words = ["havfrue", "øks", "fly"]
+    norwegian_words = ["havfrue", "øks", "fly"]
 
     with api.app.app_context():
         for i in range(0, len(english_words)):
             translation = models.to_norwegian(english_words[i])
             print(translation)
-            assert translation == norwgian_words[i]
+            assert translation == norwegian_words[i]
 
 
 def test_to_norwegian_illegal_parameter():
@@ -221,4 +226,4 @@ def test_get_iteration_name_length():
     with api.app.app_context():
         iteration_name = models.get_iteration_name()
 
-    assert len(iteration_name) == TestValues.CV_ITERATION_NAME_LENGTH
+    assert iteration_name == TestValues.CV_ITERATION_NAME

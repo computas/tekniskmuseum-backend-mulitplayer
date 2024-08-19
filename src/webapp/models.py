@@ -187,9 +187,9 @@ def insert_into_scores(player_id, score, date, difficulty_id: DifficultyId):
         and isinstance(difficulty_id, int)
     ):
         try:
-            score = Scores(player_id=player_id, score=score,
+            scores = Scores(player_id=player_id, score=score,
                            date=date, difficulty_id=difficulty_id)
-            db.session.add(score)
+            db.session.add(scores)
             db.session.commit()
             return True
         except Exception as e:
@@ -371,7 +371,7 @@ def update_iteration_name(new_name):
 
 def delete_session_from_game(game_id):
     """
-        To avoid unecessary data in the database this function is called by
+        To avoid unnecessary data in the database this function is called by
         the api after a session is finished. The record in games table,
         connected to the particular game_id, is deleted.
     """
@@ -448,7 +448,7 @@ def get_daily_high_score(difficulty_id):
 
 def get_top_n_high_score_list(top_n, difficulty_id):
     """
-        Funtion for reading total top n list from database.
+        Function for reading total top n list from database.
 
         Parameter: top_n, number of players in top list.
 
@@ -460,7 +460,7 @@ def get_top_n_high_score_list(top_n, difficulty_id):
             Scores.query.filter_by(difficulty_id=difficulty_id).order_by(
                 Scores.score.desc()).limit(top_n).all()
         )
-        # strucutre data
+   
         new = [
             {"id": score.score_id, "score": score.score}
             for score in top_n_list
@@ -475,7 +475,7 @@ def get_top_n_high_score_list(top_n, difficulty_id):
 
 def to_norwegian(english_label):
     """
-        Reads the labels tabel and return the norwegian translation of the
+        Reads the labels-table and return the norwegian translation of the
         english word.
     """
     try:
@@ -490,7 +490,7 @@ def to_norwegian(english_label):
 
 def to_english(norwegian_label):
     """
-        Reads the labels table and return the english translation of the norwegian label
+        Reads the labels-table and return the english translation of the norwegian label
     """
     try:
         query = Labels.query.filter(Labels.norwegian == norwegian_label)[0]
