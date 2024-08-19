@@ -24,7 +24,7 @@ class TestValues:
     PLAYER_2 = uuid.uuid4().hex
     GAME_ID = uuid.uuid4().hex
     TODAY = datetime.datetime.today()
-    CV_ITERATION_NAME_LENGTH = 36
+    CV_ITERATION_NAME = "Iteration5"
     LABELS = "label1, label2, label3"
     STATE = "Ready"
 
@@ -226,4 +226,4 @@ def test_get_iteration_name_length():
     with api.app.app_context():
         iteration_name = models.get_iteration_name()
 
-    assert len(iteration_name) > 0
+    assert iteration_name == TestValues.CV_ITERATION_NAME
