@@ -48,19 +48,6 @@ def test_insert_into_games():
 
     assert result
 
-
-def test_insert_into_scores():
-    """
-        Check that records exists in Scores table after inserting.
-    """
-    easy_difficulty = DifficultyId.Easy
-    with api.app.app_context():
-        result = models.insert_into_scores(
-            "Test User", 500, TestValues.TODAY, easy_difficulty)
-
-    assert result
-
-
 def test_insert_into_players():
     """
         Check that record exists in Players table after inserting.
@@ -73,9 +60,22 @@ def test_insert_into_players():
     assert result
 
 
-def test_insert_into_mulitplayer():
+def test_insert_into_scores():
     """
-        Check that record exists in MulitPlayer after inserting.
+        Check that records exists in Scores table after inserting.
+    """
+    with api.app.app_context():
+
+       #models.insert_into_players(TestValues.PLAYER_ID, TestValues.GAME_ID, TestValues.STATE)
+       
+        result = models.insert_into_scores(
+            TestValues.PLAYER_ID, 500, TestValues.TODAY, DifficultyId.Easy)
+
+    assert result
+
+def test_insert_into_multiplayer():
+    """
+        Check that record exists in MultiPlayer after inserting.
     """
     with api.app.app_context():
         result = models.insert_into_mulitplayer(
@@ -133,7 +133,7 @@ def test_illegal_parameter_mulitplayer():
         models.insert_into_mulitplayer(100, 200, 11)
 
 
-def test_query_euqals_insert_games():
+def test_query_equals_insert_games():
     """
         Check that inserted record is the same as record catched by query.
     """
@@ -202,13 +202,13 @@ def test_to_norwegian_correct_translation():
         Test that to_norwegian translates words correctly
     """
     english_words = ["mermaid", "axe", "airplane"]
-    norwgian_words = ["havfrue", "øks", "fly"]
+    norwegian_words = ["havfrue", "øks", "fly"]
 
     with api.app.app_context():
         for i in range(0, len(english_words)):
             translation = models.to_norwegian(english_words[i])
             print(translation)
-            assert translation == norwgian_words[i]
+            assert translation == norwegian_words[i]
 
 
 def test_to_norwegian_illegal_parameter():
