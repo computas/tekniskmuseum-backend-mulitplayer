@@ -213,6 +213,49 @@ def test_classification_only_client1_correct(test_clients):
     assert r2[0]["args"][0]["hasWon"] is False
     assert len(r2) == 1
 
+@patch('webapp.api.classifier', mock_classifier)
+def test_game_in_different_languages(test_clients):
+    correct_label = "angel"
+    wrong_label = "bicycle"
+
+    _, ws_client1, ws_client2 = test_clients
+    ws_client1.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    r1 = ws_client1.get_received()
+    r2 = ws_client2.get_received()
+    args = r1[0]["args"][0]
+    game_id = args["game_id"]
+    data_1 = {"game_id": game_id, "time_left": 1, "lang": "NO"}
+    data_2 = {"game_id": game_id, "time_left": 1, "lang": "ENG"}
+
+    ws_client1.emit(
+        "classify",
+        data_1,
+        _get_image_as_stream(HARAMBE_PATH),
+        correct_label)
+    ws_client2.emit(
+        "classify",
+        data_2,
+        _get_image_as_stream(HARAMBE_PATH),
+        wrong_label)
+
+    r1 = ws_client1.get_received()
+    print(r1)
+    assert r1[0]["name"] == "prediction"
+    assert type(r1[0]["args"][0]["certainty"]) is dict
+    assert r1[0]["args"][0]["correctLabel"] == "engel"
+    assert r1[0]["args"][0]["guess"] == "engel"
+    assert r1[0]["args"][0]["hasWon"] is True
+    assert len(r1) == 1
+
+    r2 = ws_client2.get_received()
+    assert r2[0]["name"] == "prediction"
+    assert type(r2[0]["args"][0]["certainty"]) is dict
+    assert r2[0]["args"][0]["correctLabel"] == wrong_label
+    assert r2[0]["args"][0]["guess"] == correct_label
+    assert r2[0]["args"][0]["hasWon"] is False
+    assert len(r2) == 1
+
 
 @patch('webapp.api.classifier', mock_classifier)
 def test_classification_both_correct(test_clients):
