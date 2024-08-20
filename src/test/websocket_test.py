@@ -16,7 +16,6 @@ import os
 
 current_path = os.getcwd()
 parent_path = os.path.dirname(current_path)
-
 HARAMBE_PATH = os.path.join(parent_path, 'data/harambe.png')
 
 mock_classifier = MagicMock()
@@ -39,6 +38,8 @@ def test_clients():
         
         yield flask_client, test_client1, test_client2
 
+        test_client1.disconnect()
+        test_client2.disconnect()
 
 @pytest.fixture
 def four_test_clients():
@@ -59,6 +60,10 @@ def four_test_clients():
 
         yield flask_client, test_client1, test_client2, test_client3, test_client4
 
+        test_client1.disconnect()
+        test_client2.disconnect()
+        test_client3.disconnect()
+        test_client4.disconnect()
 
 @pytest.mark.parametrize('data', [
     (''),
