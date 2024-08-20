@@ -145,6 +145,33 @@ def test_join_game_diff_pair_id(four_test_clients):
     r21 = ws_client2_1.get_received()
     assert r21[0]["name"] == "joinGame"
 
+def test_join_game_different_difficulty(test_clients):
+    """ 
+    tests whether a player with a different difficulty is able to join game
+    """
+    _, ws_client1, ws_client2 = test_clients
+
+    data_1 = '{"pair_id": "pair_id_1A","difficulty_id": 1}'
+    data_2 = '{"pair_id": "pair_id_2B","difficulty_id": 3}'
+
+    ws_client1.emit("joinGame", data_1)
+
+    r1 = ws_client1.get_received()
+    assert r1[0]["name"] == "joinGame"
+    assert r1[0]["args"][0]['player_nr'] == 'player_1'
+    assert not r1[1]["args"][0]['ready']
+    r2 = ws_client2.get_received()
+    assert r2 == []
+
+    ws_client2.emit("joinGame", data_2)
+
+    assert r1[0]["name"] == "joinGame"
+    r2 = ws_client2.get_received()
+    assert r2[0]["name"] == "joinGame"
+    assert r2[0]["args"][0]["game_id"] != r1[0]["args"][0]["game_id"]
+    assert r2[1]["args"][0]['ready'] == False
+    
+
 
 @patch('webapp.api.classifier', mock_classifier)
 def test_classification_only_client1_correct(test_clients):
