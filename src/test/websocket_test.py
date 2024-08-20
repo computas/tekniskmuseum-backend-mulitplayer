@@ -70,6 +70,7 @@ def test_join_game_same_pair_id(test_clients, data, ):
     """
     _, ws_client1, ws_client2 = test_clients
 
+    data = '{"difficulty_id": 1}'
     ws_client1.emit("joinGame", data)
 
     r1 = ws_client1.get_received()
@@ -94,8 +95,8 @@ def test_join_game_diff_pair_id(four_test_clients):
         tests wether a player is able to join game
     """
     _, ws_client1_1, ws_client1_2, ws_client2_1, ws_client2_2 = four_test_clients
-    data_1 = '{"pair_id": "pair_id_1"}'
-    data_2 = '{"pair_id": "pair_id_2"}'
+    data_1 = '{"pair_id": "pair_id_1","difficulty_id": 1}'
+    data_2 = '{"pair_id": "pair_id_2","difficulty_id": 1}'
 
     # the first player is added to both games
     ws_client1_1.emit("joinGame", data_1)
@@ -146,8 +147,8 @@ def test_classification_only_client1_correct(test_clients):
     correct_label = "angel"
     wrong_label = "bicycle"
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
-    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client1.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     args = r1[0]["args"][0]
@@ -187,8 +188,8 @@ def test_classification_both_correct(test_clients):
     time_left = 1
     correct_label = "angel"
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
-    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client1.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     args = r1[0]["args"][0]
@@ -237,8 +238,8 @@ def test_classification_client1_timeout_and_client2_correct(test_clients):
     time_left = 1
     correct_label = "angel"
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
-    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client1.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     args = r1[0]["args"][0]
@@ -282,8 +283,8 @@ def test_classification_client1_correct_and_client2_timeout(test_clients):
     time_left = 1
     correct_label = "angel"
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
-    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client1.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     args = r1[0]["args"][0]
@@ -327,8 +328,8 @@ def test_classification_both_timeout(test_clients):
     time_out = 0
     correct_label = "angel"
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
-    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client1.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     args = r1[0]["args"][0]
@@ -396,8 +397,8 @@ def test_players_can_keep_guessing(test_clients):
 
 def test_end_game(test_clients):
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '')
-    ws_client2.emit("joinGame", '')
+    ws_client1.emit("joinGame", '{"difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     player_1_id = r1[0]["args"][0]["player_id"]

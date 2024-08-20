@@ -101,8 +101,8 @@ def handle_joinGame(json_data):
 
     data = json.loads(json_data or 'null')
     try:
-        pair_id = data["pair_id"]
         difficulty_id = data["difficulty_id"]
+        pair_id = data["pair_id"]
     except (KeyError, TypeError):
         pair_id = ''
         app.logger.error("No pair id for " + request.sid)
