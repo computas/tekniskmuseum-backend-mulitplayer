@@ -187,8 +187,7 @@ def insert_into_scores(player_id, score, date, difficulty_id: DifficultyId):
         and isinstance(difficulty_id, int)
     ):
         try:
-            scores = Scores(player_id=player_id, score=score,
-                           date=date, difficulty_id=difficulty_id)
+            scores = Scores(player_id=player_id, score=score, date=date, difficulty_id=difficulty_id)
             db.session.add(scores)
             db.session.commit()
             return True
@@ -460,7 +459,6 @@ def get_top_n_high_score_list(top_n, difficulty_id):
             Scores.query.filter_by(difficulty_id=difficulty_id).order_by(
                 Scores.score.desc()).limit(top_n).all()
         )
-   
         new = [
             {"id": score.score_id, "score": score.score}
             for score in top_n_list

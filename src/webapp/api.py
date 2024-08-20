@@ -101,8 +101,8 @@ def handle_joinGame(json_data):
 
     data = json.loads(json_data or 'null')
     try:
-        pair_id = data["pair_id"]
         difficulty_id = data["difficulty_id"]
+        pair_id = data["pair_id"]
     except (KeyError, TypeError):
         pair_id = ''
         app.logger.error("No pair id for " + request.sid)
@@ -215,13 +215,16 @@ def get_example_drawings(json_data, emitEndpoint="getExampleDrawings"):
         example_drawing_urls)
     emit(emitEndpoint, json.dumps(example_drawings), room=game_id)
 
+
 @socketio.on("getExampleDrawingsP1")
 def get_example_drawings_player_1(json_data):
     get_example_drawings(json_data, emitEndpoint="getExampleDrawingsP1")
 
+
 @socketio.on("getExampleDrawingsP2")
 def get_example_drawings_player_2(json_data):
     get_example_drawings(json_data, emitEndpoint="getExampleDrawingsP2")
+
 
 @socketio.on("classify")
 def handle_classify(data, image, correct_label=None):

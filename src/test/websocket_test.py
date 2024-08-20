@@ -11,15 +11,13 @@ import pytest
 import json
 import tempfile
 import werkzeug
-import sys
+from webapp.api import app, socketio
 import os
 
-utilities_directory = sys.path[0].replace("/test", "")
-sys.path.insert(0, utilities_directory)
+current_path = os.getcwd()
+parent_path = os.path.dirname(current_path)
+HARAMBE_PATH = os.path.join(parent_path, 'data/harambe.png')
 
-from webapp.api import app, socketio
-
-HARAMBE_PATH = "data/harambe.png"
 mock_classifier = MagicMock()
 mock_classifier.predict_image_by_post = MagicMock(
     return_value=({"angel": 1}, "angel"))
@@ -37,8 +35,10 @@ def test_clients():
         )
         """ response = flask_client.get("/")
         assert response.status_code == 200 """
-        
         yield flask_client, test_client1, test_client2
+
+        test_client1.disconnect()
+        test_client2.disconnect()
 
 
 @pytest.fixture
@@ -60,6 +60,11 @@ def four_test_clients():
 
         yield flask_client, test_client1, test_client2, test_client3, test_client4
 
+        test_client1.disconnect()
+        test_client2.disconnect()
+        test_client3.disconnect()
+        test_client4.disconnect()
+
 
 @pytest.mark.parametrize('data', [
     (''),
@@ -70,6 +75,7 @@ def test_join_game_same_pair_id(test_clients, data, ):
     """
     _, ws_client1, ws_client2 = test_clients
 
+    data = '{"difficulty_id": 1}'
     ws_client1.emit("joinGame", data)
 
     r1 = ws_client1.get_received()
@@ -94,8 +100,8 @@ def test_join_game_diff_pair_id(four_test_clients):
         tests wether a player is able to join game
     """
     _, ws_client1_1, ws_client1_2, ws_client2_1, ws_client2_2 = four_test_clients
-    data_1 = '{"pair_id": "pair_id_1"}'
-    data_2 = '{"pair_id": "pair_id_2"}'
+    data_1 = '{"pair_id": "pair_id_1","difficulty_id": 1}'
+    data_2 = '{"pair_id": "pair_id_2","difficulty_id": 1}'
 
     # the first player is added to both games
     ws_client1_1.emit("joinGame", data_1)
@@ -146,14 +152,13 @@ def test_classification_only_client1_correct(test_clients):
     correct_label = "angel"
     wrong_label = "bicycle"
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
-    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client1.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     args = r1[0]["args"][0]
     game_id = args["game_id"]
-    data = {"game_id": game_id, "time_left": time_left}
-
+    data = {"game_id": game_id, "time_left": time_left, "lang": "NO"}
     ws_client1.emit(
         "classify",
         data,
@@ -187,13 +192,13 @@ def test_classification_both_correct(test_clients):
     time_left = 1
     correct_label = "angel"
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
-    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client1.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     args = r1[0]["args"][0]
     game_id = args["game_id"]
-    data = {"game_id": game_id, "time_left": time_left}
+    data = {"game_id": game_id, "time_left": time_left, "lang": "NO"}
 
     ws_client1.emit(
         "classify",
@@ -237,14 +242,14 @@ def test_classification_client1_timeout_and_client2_correct(test_clients):
     time_left = 1
     correct_label = "angel"
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
-    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client1.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     args = r1[0]["args"][0]
     game_id = args["game_id"]
 
-    data1 = {"game_id": game_id, "time_left": time_out}
+    data1 = {"game_id": game_id, "time_left": time_out, "lang": "NO"}
     ws_client1.emit(
         "classify",
         data1,
@@ -254,7 +259,7 @@ def test_classification_client1_timeout_and_client2_correct(test_clients):
     assert ws_client1.get_received() == []
     assert ws_client2.get_received() == []
 
-    data2 = {"game_id": game_id, "time_left": time_left}
+    data2 = {"game_id": game_id, "time_left": time_left, "lang": "NO"}
     ws_client2.emit(
         "classify",
         data2,
@@ -282,14 +287,14 @@ def test_classification_client1_correct_and_client2_timeout(test_clients):
     time_left = 1
     correct_label = "angel"
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
-    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client1.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     args = r1[0]["args"][0]
     game_id = args["game_id"]
 
-    data1 = {"game_id": game_id, "time_left": time_left}
+    data1 = {"game_id": game_id, "time_left": time_left, "lang": "NO"}
     ws_client1.emit(
         "classify",
         data1,
@@ -305,7 +310,7 @@ def test_classification_client1_correct_and_client2_timeout(test_clients):
     assert len(r1) == 1
     assert ws_client2.get_received() == []
 
-    data2 = {"game_id": game_id, "time_left": time_out}
+    data2 = {"game_id": game_id, "time_left": time_out, "lang": "NO"}
     ws_client2.emit(
         "classify",
         data2,
@@ -327,14 +332,14 @@ def test_classification_both_timeout(test_clients):
     time_out = 0
     correct_label = "angel"
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '{"pair_id": "classify"}')
-    ws_client2.emit("joinGame", '{"pair_id": "classify"}')
+    ws_client1.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"pair_id": "classify","difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     args = r1[0]["args"][0]
     game_id = args["game_id"]
 
-    data1 = {"game_id": game_id, "time_left": time_out}
+    data1 = {"game_id": game_id, "time_left": time_out, "lang": "NO"}
     ws_client1.emit(
         "classify",
         data1,
@@ -344,7 +349,7 @@ def test_classification_both_timeout(test_clients):
     assert ws_client1.get_received() == []
     assert ws_client2.get_received() == []
 
-    data2 = {"game_id": game_id, "time_left": time_out}
+    data2 = {"game_id": game_id, "time_left": time_out, "lang": "NO"}
     ws_client2.emit(
         "classify",
         data2,
@@ -365,8 +370,8 @@ def test_players_not_with_same_playerid(test_clients):
     """TODO: implement me"""
     _, ws_client1, ws_client2 = test_clients
 
-    ws_client1.emit("joinGame", '')
-    ws_client2.emit("joinGame", '')
+    ws_client1.emit("joinGame", '{"difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"difficulty_id": 1}')
 
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
@@ -376,14 +381,14 @@ def test_players_not_with_same_playerid(test_clients):
 
 def test_players_can_keep_guessing(test_clients):
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '')
-    ws_client2.emit("joinGame", '')
+    ws_client1.emit("joinGame", '{"difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     game_id = r1[0]["args"][0]["game_id"]
 
     for i in range(3):
-        data = {"game_id": game_id, "time_left": 1}
+        data = {"game_id": game_id, "time_left": 1, "lang": "NO"}
 
         ws_client1.emit("classify", data, _get_image_as_stream(HARAMBE_PATH))
         ws_client2.emit("classify", data, _get_image_as_stream(HARAMBE_PATH))
@@ -396,8 +401,8 @@ def test_players_can_keep_guessing(test_clients):
 
 def test_end_game(test_clients):
     _, ws_client1, ws_client2 = test_clients
-    ws_client1.emit("joinGame", '')
-    ws_client2.emit("joinGame", '')
+    ws_client1.emit("joinGame", '{"difficulty_id": 1}')
+    ws_client2.emit("joinGame", '{"difficulty_id": 1}')
     r1 = ws_client1.get_received()
     r2 = ws_client2.get_received()
     player_1_id = r1[0]["args"][0]["player_id"]
