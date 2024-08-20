@@ -19,6 +19,7 @@ from webapp import api
 from webapp import models
 from utilities.exceptions import UserError
 
+
 class TestValues:
     PLAYER_ID = uuid.uuid4().hex
     PLAYER_2 = uuid.uuid4().hex
@@ -45,8 +46,8 @@ def test_insert_into_games():
         result = models.insert_into_games(
             TestValues.GAME_ID, TestValues.LABELS, TestValues.TODAY, DifficultyId.Easy
         )
-
     assert result
+
 
 def test_insert_into_players():
     """
@@ -65,13 +66,11 @@ def test_insert_into_scores():
         Check that records exists in Scores table after inserting.
     """
     with api.app.app_context():
-
-       #models.insert_into_players(TestValues.PLAYER_ID, TestValues.GAME_ID, TestValues.STATE)
-       
         result = models.insert_into_scores(
             TestValues.PLAYER_ID, 500, TestValues.TODAY, DifficultyId.Easy)
 
     assert result
+
 
 def test_insert_into_multiplayer():
     """

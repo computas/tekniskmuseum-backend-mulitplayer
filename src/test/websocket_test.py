@@ -35,11 +35,11 @@ def test_clients():
         )
         """ response = flask_client.get("/")
         assert response.status_code == 200 """
-        
         yield flask_client, test_client1, test_client2
 
         test_client1.disconnect()
         test_client2.disconnect()
+
 
 @pytest.fixture
 def four_test_clients():
@@ -64,6 +64,7 @@ def four_test_clients():
         test_client2.disconnect()
         test_client3.disconnect()
         test_client4.disconnect()
+
 
 @pytest.mark.parametrize('data', [
     (''),
