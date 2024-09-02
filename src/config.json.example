@@ -1,0 +1,16 @@
+{
+    "CV_ENDPOINT": "https://example.cognitiveservices.azure.com/",
+    "CV_PREDICTION_ENDPOINT": "https://example-prediction.cognitiveservices.azure.com/,
+    "CV_PROJECT_ID": "exampleid",
+    "CV_TRAINING_KEY": "examplekey",
+    "CV_PREDICTION_KEY": "examplekey",
+    "CV_PREDICTION_RESOURCE_ID": "/subscriptions/16511401-9e5d-4117-88f5-69eae5631cfc/resourceGroups/KunstigeJens-Prod/providers/Microsoft.CognitiveServices/accounts/example-Prediction",
+    "EMAIL": "example@computas.com",
+    "BASE_BLOB_URL": "https://example.blob.core.windows.net",
+    "BLOB_CONNECTION_STRING": "DefaultEndpointsProtocol=https;AccountName=example;AccountKey=exampleKey;EndpointSuffix=core.windows.net",
+    "CONTAINER_NAME": "oldimgcontainer",
+    "TEST_DB_CONNECTION_STRING": "exampleusr:examplepwd@example-database-server.database.windows.net:1433/example-database?driver=ODBC+Driver+17+for+SQL+Server",
+    "DB_CONNECTION_STRING": "exampleusr:examplepwd@example-database-server.database.windows.net:1433/example-database?driver=ODBC+Driver+17+for+SQL+Server&Connection",
+    "SECRET_KEY": "whateveryouwanthere",
+    "CORS_ALLOWED_ORIGIN": "http://localhost:4200"
+}

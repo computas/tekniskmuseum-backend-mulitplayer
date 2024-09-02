@@ -6,3 +6,5 @@
 venv
 config.json
 src/config.json
+.idea
+.venv

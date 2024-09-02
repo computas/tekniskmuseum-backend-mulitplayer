@@ -18,11 +18,12 @@ parser.add_argument(
 ARGUMENTS = parser.parse_args()
 # export keys
 KEYLIST = json.loads(ARGUMENTS.keys)
+print(KEYLIST)
 for keydict in KEYLIST:
     os.environ[keydict["name"]] = keydict["value"]
 
 # clear cli arguments as pytest reads them
 sys.argv = [sys.argv[0]]
 # run pytets
-TEST_RESULT = pytest.main()
+TEST_RESULT = pytest.main(["tests/"])
 assert TEST_RESULT == 0

@@ -11,14 +11,16 @@ from flask import Flask
 from PIL import Image
 from PIL import ImageChops
 from io import BytesIO
+from datetime import datetime
 import os
 import json
 import uuid
-import datetime
 import time
 import random
 
 from customvision.classifier import Classifier
+from utilities.difficulties import DifficultyId
+from utilities.languages import Language
 from webapp import models
 from webapp import storage
 from utilities.exceptions import UserError
@@ -34,7 +36,8 @@ if "IS_PRODUCTION" in os.environ:
     logger = True
 if Keys.exists("CORS_ALLOWED_ORIGIN"):
     app.logger.info("cors is: " + Keys.get("CORS_ALLOWED_ORIGIN"))
-    socketio = SocketIO(app, cors_allowed_origins=Keys.get("CORS_ALLOWED_ORIGIN"), logger=logger)
+    socketio = SocketIO(app, cors_allowed_origins=Keys.get(
+        "CORS_ALLOWED_ORIGIN"), logger=logger)
 else:
     app.logger.info("cors is: " + "[*]")
     socketio = SocketIO(app, cors_allowed_origins='*', logger=logger)
@@ -43,7 +46,7 @@ app.config.from_object("utilities.setup.Flask_config")
 models.db.init_app(app)
 
 models.create_tables(app)
-models.seed_labels(app, "./dict_eng_to_nor.csv")
+models.seed_labels(app, "./dict_eng_to_nor_difficulties_v2.csv")
 
 
 classifier = Classifier()
@@ -95,9 +98,10 @@ def handle_joinGame(json_data):
         * If check is true insert player where player2 is none and start
           the game.
     """
-    
+
     data = json.loads(json_data or 'null')
     try:
+        difficulty_id = data["difficulty_id"]
         pair_id = data["pair_id"]
     except (KeyError, TypeError):
         pair_id = ''
@@ -118,9 +122,10 @@ def handle_joinGame(json_data):
 
     else:
         game_id = uuid.uuid4().hex
-        labels = models.get_n_labels(setup.NUM_GAMES)
-        today = datetime.datetime.today()
-        models.insert_into_games(game_id, json.dumps(labels), today)
+        labels = models.get_n_labels(setup.NUM_GAMES, difficulty_id)
+        today = datetime.today()
+        models.insert_into_games(
+            game_id, json.dumps(labels), today, difficulty_id)
         models.insert_into_players(player_id, game_id, "Waiting")
         models.insert_into_mulitplayer(game_id, player_id, pair_id)
         player_nr = "player_1"
@@ -149,9 +154,76 @@ def handle_getLabel(json_data):
     models.update_game_for_player(game_id, player_id, 0, "Ready")
     models.update_game_for_player(game_id, opponent.player_id, 0, "Ready")
 
-    label = json.loads(get_label(game_id))
-    app.logger.info("returned label: " + label)
+    label = get_label(game_id)
+    app.logger.info("returned label: " + json.dumps(label))
     emit("getLabel", json.dumps(label), room=game_id)
+
+
+@socketio.on("postScore")
+def handle_postScore(json_data):
+    data = json.loads(json_data)
+    app.logger.info(data)
+    player_id = data.get("player_id")
+    score = float(data.get("score"))
+    difficulty_id = int(data.get("difficulty_id"))
+    assert isinstance(difficulty_id, int)
+
+    today = datetime.today()
+    models.insert_into_scores(player_id, score, today, difficulty_id)
+
+
+@socketio.on("viewHighScore")
+def view_high_score(json_data):
+    """
+        Read highscore from database. Return top n of all time and daily high
+        scores.
+    """
+    difficulty_id = DifficultyId.Multiplayer
+    data = json.loads(json_data)
+    game_id = data["game_id"]
+    # read top n overall high score
+    top_n_high_scores = models.get_top_n_high_score_list(
+        setup.TOP_N, difficulty_id=difficulty_id)
+    # read daily high score
+    daily_high_scores = models.get_daily_high_score(
+        difficulty_id=difficulty_id)
+    data = {
+        "daily": daily_high_scores,
+        "total": top_n_high_scores,
+    }
+
+    emit("viewHighScore", json.dumps(data), room=game_id)
+
+
+@socketio.on("getExampleDrawings")
+def get_example_drawings(json_data, emitEndpoint="getExampleDrawings"):
+    """
+        Get example drawings from the database
+    """
+    data = json.loads(json_data)
+    game_id = data["game_id"]
+    number_of_images = data["number_of_images"]
+
+    label = data["label"]
+    lang = data["lang"]
+    if (lang == "NO"):
+        label = models.to_english(label)
+
+    example_drawing_urls = models.get_n_random_example_images(
+        label, number_of_images)
+    example_drawings = storage.get_images_from_relative_url(
+        example_drawing_urls)
+    emit(emitEndpoint, json.dumps(example_drawings), room=game_id)
+
+
+@socketio.on("getExampleDrawingsP1")
+def get_example_drawings_player_1(json_data):
+    get_example_drawings(json_data, emitEndpoint="getExampleDrawingsP1")
+
+
+@socketio.on("getExampleDrawingsP2")
+def get_example_drawings_player_2(json_data):
+    get_example_drawings(json_data, emitEndpoint="getExampleDrawingsP2")
 
 
 @socketio.on("classify")
@@ -169,6 +241,7 @@ def handle_classify(data, image, correct_label=None):
     player_id = request.sid
     game_id = data["game_id"]
     time_left = data["time_left"]
+    lang: Language = data["lang"]
 
     if correct_label is None:
         game = models.get_game(game_id)
@@ -209,12 +282,23 @@ def handle_classify(data, image, correct_label=None):
 
     has_won = (correct_label == best_guess) and (time_left > 0)
 
-    response = {
-        "certainty": translate_probabilities(certainty),
-        "guess": models.to_norwegian(best_guess),
-        "correctLabel": models.to_norwegian(correct_label),
-        "hasWon": has_won,
-    }
+    if lang == Language.Norwegian:
+
+        response = {
+            "certainty": translate_probabilities(certainty),
+            "guess": models.to_norwegian(best_guess),
+            "correctLabel": models.to_norwegian(correct_label),
+            "hasWon": has_won,
+        }
+
+    else:
+        response = {
+            "certainty": certainty,
+            "guess": best_guess,
+            "correctLabel": correct_label,
+            "hasWon": has_won,
+        }
+
     emit("prediction", response)
 
     if has_won:
@@ -238,7 +322,6 @@ def handle_endGame(json_data):
         their scores and the player with the highest score is deemed the winner.
         The two scores are finally stored in the database.
     """
-    date = datetime.datetime.today()
     data = json.loads(json_data)
     # Get data from given player
     game_id = data["game_id"]
@@ -248,7 +331,6 @@ def handle_endGame(json_data):
         pass
         # raise excp.BadRequest("Game not finished")
     # Insert score information into db
-    models.insert_into_scores(player_id, score_player, date)
     # Create a list containing player data which is sent out to both players
     return_data = {"score": score_player, "playerId": player_id}
     # Retrieve the opponent (client) to pass on the score to
@@ -270,9 +352,9 @@ def error_handler(error):
         emit("error", str(error))
 
 
-def get_label(game_id):
+def get_label(game_id) -> dict[str, str]:
     """
-        Provides the client with a new word.
+        Provides the client with a new word in both languages.
     """
     game = models.get_game(game_id)
 
@@ -281,10 +363,10 @@ def get_label(game_id):
         send("Number of games exceeded")
 
     labels = json.loads(game.labels)
-    label = labels[game.session_num - 1]
+    label: str = labels[game.session_num - 1]
     norwegian_label = models.to_norwegian(label)
-    data = {"label": norwegian_label}
-    return json.dumps(data)
+    data = {"label": label, "norwegian_label": norwegian_label}
+    return data
 
 
 def translate_probabilities(labels):
