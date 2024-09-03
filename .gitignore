@@ -8,3 +8,4 @@ config.json
 src/config.json
 .idea
 .venv
+src/record.log
