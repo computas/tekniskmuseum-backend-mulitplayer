@@ -12,6 +12,8 @@ from PIL import Image
 from PIL import ImageChops
 from io import BytesIO
 from datetime import datetime
+import logging
+from logging.handlers import RotatingFileHandler
 import os
 import json
 import uuid
@@ -30,9 +32,18 @@ from utilities.keys import Keys
 # Initialize app
 app = Flask(__name__)
 logger = True
-app.logger.setLevel("INFO")
+
+#config logging
+logging.basicConfig(filename='record.log', level=logging.INFO, filemode="w", format="%(asctime)s %(levelname)s %(message)s")
+#max file size 4 MB
+handler = RotatingFileHandler(
+    filename='record.log',
+    maxBytes=4 * 1024 * 1024,
+    backupCount=5
+)
+app.logger.addHandler(handler)
+
 if "IS_PRODUCTION" in os.environ:
-    app.logger.setLevel("WARNING")
     logger = True
 if Keys.exists("CORS_ALLOWED_ORIGIN"):
     app.logger.info("cors is: " + Keys.get("CORS_ALLOWED_ORIGIN"))
